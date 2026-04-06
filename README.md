@@ -48,6 +48,10 @@ FORK Readme:
 
 **Damage Taken will be shown added to PDT and MDT automatically.
 
+**MultiHit is a combination of DA/TA/QA for when you don't care which of them you have.
+
+**Subtle Blow should correctly be capping each category at 50, while providing the total amount overall (so it will not give you a cap of 75 if you have SB1 at 65 and SB2 at 10).
+
 **The following DW categories have been added to show how much DW is needed for various amounts of haste (the number) and whether you are getting haste samba from a DNC sub or main (S and M respectively). The cap shown will vary based on which you choose, it will have the amounts provided by traits automatically added, and then show how much you need to cap.
 Stat Name = Cap
 ['dw0'] = 64,
