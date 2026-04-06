@@ -33,9 +33,11 @@ please tell me on Twitter [@from20020516](https://twitter.com/from20020516) **wi
     -「調べる」時に対象のレベルが設定値未満なら結果を表示しません。(初期値99)
     - **Tips:** `100`を設定すると「調べる」時の結果を表示しません。
 -----------------
+-----------------
+FORK Readme:
 ![Screenshot 2026-04-06 035930](https://github.com/user-attachments/assets/4b553116-8049-4e2c-a875-046a064ba823)
 
-FORK Readme:
+
 **Commands changed to //chp from //cp
 
 **Added abbreviations for various stats to reduce the amount of text shown.
