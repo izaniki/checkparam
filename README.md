@@ -78,7 +78,10 @@ Stat Name = Cap
 
 //chp (or //checkparam) <role>
 
-This will set the parameters being checked by the addon to a certain preset that are defined in the .lua file. Some examples that are currently inside: idle, idle2(more in-depth stats added as well, but it gets long), dd, heal, tank, mage, range, pet, default. These will allow you to quickly change what is checked by typing, for example, //chp idle and then checking a player. These parameters will remain until set back to the default by using //chp default OR //chp reset.
+This will set the parameters being checked by the addon to a certain preset that are defined in the .lua file. Some examples that are currently inside: 
+idle, idle2(more in-depth stats added as well, but it gets long), dd, heal, tank, mage, range, pet, default. Added: dw, dws, dwm for when you have, respectively, no haste samba ('dw'), haste samba from a DNC sub ('dws'), and haste samba from a DNC main ('dwm').
+
+These will allow you to quickly change what is checked by typing, for example, //chp idle and then checking a player. These parameters will remain until set back to the default by using //chp default OR //chp reset.
 
 Be aware, that editing these roles will affect all jobs as well as the roles are being used as terms inside of those sets of parameters. If you want to change what shows for what jobs, I recommend adding it to the job instead of editing the role.
 
