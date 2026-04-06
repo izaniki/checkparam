@@ -49,6 +49,9 @@ roles = {
         mage = 'physical damage taken|magic damage taken|magic attack bonus|magic burst damage|magic burst damage ii|magic accuracy|fast cast',
         range = 'physical damage taken|magic damage taken|ranged accuracy|ranged attack|snapshot|rapid shot|store tp',
 		pet = 'physical damage taken|magic damage taken|pet: regen|pet: physical damage taken|pet: magic damage taken|pet: magic attack bonus|pet: magic damage|pet: attack|pet: double attack|pet: accuracy|pet: magic accuracy|pet: haste',
+		dw = 'dw0|dw10|dw15|dw30|dwcap',
+		dws = 'dw0s|dw10s|dw15s|dw30s|dwcaps',
+		dwm= 'dw0m|dw10m|dw15m|dw30m|dwcapm',
     },
     WAR = 'role:dd|double attack|triple attack|quadruple attack',
     MNK = 'role:dd|martial arts|total subtle blow',
@@ -547,7 +550,7 @@ main_job_traits = {
 }
 
 sub_job_traits = {
-    ['WAR'] = {{['double attack']=12}},
+    ['WAR'] = {['double attack']=12},
     ['MNK'] = {},
     ['WHM'] = {},
     ['BLM'] = {},
@@ -614,16 +617,16 @@ abbreviations = {
     ['dw10s'] = 'DW (10% sub samba)',
     ['dw15s'] = 'DW (15% sub samba)',
     ['dw30s'] = 'DW (30% sub samba)',
-	['dwcaps']='DW(cap sub samba)',
+	['dwcaps']='DW (cap sub samba)',
     ['dw0m'] = 'DW (0% main samba)',
     ['dw10m'] = 'DW (10% main samba)',
     ['dw15m'] = 'DW (15% main samba)',
     ['dw30m'] = 'DW (30% main samba)',
-	['dwcapm']='DW(cap main samba)',
+	['dwcapm']='DW (cap main samba)',
 	['total subtle blow'] = 'Total SB',
     ['subtle blow ii'] = 'SB II',
 	['defense'] = 'DEF',
-	['hp'] = 'HP',
+	['hp']='HP',
     -- You can add as many as you want here!
 }
 caps={
