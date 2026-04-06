@@ -623,6 +623,7 @@ abbreviations = {
 	['total subtle blow'] = 'Total SB',
     ['subtle blow ii'] = 'SB II',
 	['defense'] = 'DEF',
+	['hp'] = 'HP',
     -- You can add as many as you want here!
 }
 caps={
