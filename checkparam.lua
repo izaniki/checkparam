@@ -394,7 +394,7 @@ integrate = {
     ['mag dmg'] = 'magic damage',
     ['crithit rate'] = 'critical hit rate',
     ['phys dmg taken'] = 'physical damage taken',
-    
+    ['magic def bonus'] = 'magic defense bonus',
     -- Fixes for Quick Cast / Quick Magic
     ['occ quickens spellcasting'] = "quick cast",
     ['occassionally quickens spellcasting'] = "quick cast",
