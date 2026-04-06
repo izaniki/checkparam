@@ -547,7 +547,7 @@ main_job_traits = {
 }
 
 sub_job_traits = {
-    ['WAR'] = {},
+    ['WAR'] = {{['double attack']=12}},
     ['MNK'] = {},
     ['WHM'] = {},
     ['BLM'] = {},
