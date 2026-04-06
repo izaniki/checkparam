@@ -1,14 +1,14 @@
 # checkparam
-Fork of Checkparam addon for FFXI -- All Original Code credit goes to  @from20020516. Could not find their twitter account or the github for this addon. Some additional functionality has been added (view the changes below)
+Fork of Checkparam addon for FFXI -- All Original Code credit goes to  @from20020516. Could not find their twitter account or the github for this addon. Some additional functionality has been added (view the changes below). Everything prior to the FORK README section is their original Readme.
 
 
 # checkparam
-![40696007-caf91c3c-63fe-11e8-9837-516f9e1f2b0e](https://user-images.githubusercontent.com/26649687/40877257-96ccef12-66b8-11e8-97a4-797789375a00.jpg)
 ## English
 - `/check` OR `/c` (in-game command)
   - Whenever you `/check` any player, displays the total of property of that players current equipments.(defined in `settings.xml`)
 - `//checkparam` OR `//chp` (addon command)
     - same as /check <me>. you can use this command in equipment menu.
+
 
 ### data/settings.xml (auto-generated)
 - Define the properties you want to be displayed for each job.
@@ -33,8 +33,12 @@ please tell me on Twitter [@from20020516](https://twitter.com/from20020516) **wi
     -「調べる」時に対象のレベルが設定値未満なら結果を表示しません。(初期値99)
     - **Tips:** `100`を設定すると「調べる」時の結果を表示しません。
 -----------------
+![Screenshot 2026-04-06 035930](https://github.com/user-attachments/assets/aa134454-15c8-4f7f-8ac2-a3cf2f535a96)
+
 FORK Readme:
 **Commands changed to //chp from //cp
+
+**Added abbreviations for various stats to reduce the amount of text shown.
 
 **All caps for stats are based off of information from SE or the community's usual guidelines regarding the flooring of stats: SIRD is 102, gear haste is 26, DT is 52 (this was expressly stated by SE devs on their livestream that showed the solo Vagary fights).
 
@@ -67,7 +71,7 @@ Stat Name = Cap
 
 //chp (or //checkparam) <role>
 
-This will set the parameters being checked by the addon to a certain preset that are defined in the .lua file. Some examples that are currently inside: idle, idle2(more in-depth stats added as well, but it gets long), dd, heal, tank, mage, range. These will allow you to quickly change what is checked by typing, for example, //chp idle and then checking a player. These parameters will remain until set back to the default by using //chp default OR //chp reset.
+This will set the parameters being checked by the addon to a certain preset that are defined in the .lua file. Some examples that are currently inside: idle, idle2(more in-depth stats added as well, but it gets long), dd, heal, tank, mage, range, pet, default. These will allow you to quickly change what is checked by typing, for example, //chp idle and then checking a player. These parameters will remain until set back to the default by using //chp default OR //chp reset.
 
 Be aware, that editing these roles will affect all jobs as well as the roles are being used as terms inside of those sets of parameters. If you want to change what shows for what jobs, I recommend adding it to the job instead of editing the role.
 
