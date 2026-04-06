@@ -191,6 +191,8 @@ function split_text(id,text,arg,slot)
         elseif key == "pet: damage taken" then
             tbl['pet: physical damage taken'] = tonumber(value)+(tbl['pet: physical damage taken'] or 0)
             tbl['pet: magic damage taken'] = tonumber(value)+(tbl['pet: magic damage taken'] or 0)
+		elseif key == "spell interruption rate down" then
+            tbl[key] = math.abs(tonumber(value)) + (tbl[key] or 0)
         elseif key == "damage taken" then
             tbl['physical damage taken'] = tonumber(value)+(tbl['physical damage taken'] or 0)
             tbl['magic damage taken'] = tonumber(value)+(tbl['magic damage taken'] or 0)
@@ -399,6 +401,7 @@ integrate = {
     ['phys dmg taken'] = 'physical damage taken',
 	['magic def bonus'] = 'magic defense bonus',
 	['def'] = 'defense',
+	['spell interruption rate'] = 'spell interruption rate down',
     
     -- Fixes for Quick Cast / Quick Magic
     ['occ quickens spellcasting'] = "quick cast",
