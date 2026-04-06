@@ -1,6 +1,8 @@
 # checkparam
 Fork of Checkparam addon for FFXI -- All Original Code credit goes to  @from20020516. Could not find their twitter account or the github for this addon. Some additional functionality has been added (view the changes below). Everything prior to the FORK README section is their original Readme.
 
+** IF YOU ARE TRYING THIS OUT, DELETE/RENAME YOUR SETTINGS.XML FILE. IT WILL MESS UP A NUMBER OF STATS BEING CHECKED. THE ADDON WILL GENERATE A NEW ONE WITH THE NEW DEFAULTS AND THEN YOU CAN EDIT THEM. **
+
 
 # checkparam
 ## English
