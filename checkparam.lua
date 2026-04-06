@@ -41,11 +41,11 @@ require('math')
 
 defaults = {
 roles = {
-		idle='physical damage taken|magic damage taken|magic evasion|evasion|magic defense bonus|def|refresh|regen',
-        idle2='physical damage taken|magic damage taken|magic evasion|evasion|magic defense bonus|def|refresh|regen|HP|VIT|MND|INT',
+		idle='physical damage taken|magic damage taken|magic evasion|evasion|magic defense bonus|DEF|refresh|regen',
+        idle2='physical damage taken|magic damage taken|magic evasion|evasion|magic defense bonus|DEF|refresh|regen|HP|VIT|MND|INT',
 		dd = 'physical damage taken|magic damage taken|haste|store tp|multi attack|attack|accuracy|critical hit rate|weapon skill damage',
         heal = 'physical damage taken|magic damage taken|cure potency|cure potency ii|fast cast|quick cast|enmity|refresh|spell interruption rate down|conserve mp|healing magic skill|MND',
-        tank = 'physical damage taken|magic damage taken|enmity|spell interruption rate down|HP|fast cast|magic evasion|evasion|def|phalanx',
+        tank = 'physical damage taken|magic damage taken|enmity|spell interruption rate down|HP|fast cast|magic evasion|evasion|DEF|phalanx',
         mage = 'physical damage taken|magic damage taken|magic attack bonus|magic burst damage|magic burst damage ii|magic accuracy|fast cast',
         range = 'physical damage taken|magic damage taken|ranged accuracy|ranged attack|snapshot|rapid shot|store tp',
 		pet = 'physical damage taken|magic damage taken|pet: regen|pet: physical damage taken|pet: magic damage taken|pet: magic attack bonus|pet: magic damage|pet: attack|pet: double attack|pet: accuracy|pet: magic accuracy|pet: haste',
@@ -394,7 +394,9 @@ integrate = {
     ['mag dmg'] = 'magic damage',
     ['crithit rate'] = 'critical hit rate',
     ['phys dmg taken'] = 'physical damage taken',
-    ['magic def bonus'] = 'magic defense bonus',
+	['magic def bonus'] = 'magic defense bonus',
+	['def'] = 'defense',
+    
     -- Fixes for Quick Cast / Quick Magic
     ['occ quickens spellcasting'] = "quick cast",
     ['occassionally quickens spellcasting'] = "quick cast",
@@ -620,6 +622,7 @@ abbreviations = {
 	['dwcapm']='DW(cap main samba)',
 	['total subtle blow'] = 'Total SB',
     ['subtle blow ii'] = 'SB II',
+	['defense'] = 'DEF',
     -- You can add as many as you want here!
 }
 caps={
