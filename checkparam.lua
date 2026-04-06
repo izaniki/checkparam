@@ -45,7 +45,7 @@ roles = {
         idle2='physical damage taken|magic damage taken|magic evasion|evasion|magic defense bonus|defense|refresh|regen|HP|VIT|MND|INT',
 		dd = 'physical damage taken|magic damage taken|haste|store tp|multi attack|attack|accuracy|critical hit rate|weapon skill damage',
         heal = 'physical damage taken|magic damage taken|cure potency|cure potency ii|fast cast|quick cast|enmity|refresh|spell interruption rate down|conserve mp|healing magic skill|MND',
-        tank = 'physical damage taken|magic damage taken|enmity|spell interruption rate down|HP|fast cast|magic evasion|magic defense bonus|evasion|defense|phalanx',
+        tank = 'physical damage taken|magic damage taken|enmity|spell interruption rate down|HP|MP|fast cast|magic evasion|magic defense bonus|evasion|defense|phalanx',
         mage = 'physical damage taken|magic damage taken|magic attack bonus|magic burst damage|magic burst damage ii|magic accuracy|fast cast',
         range = 'physical damage taken|magic damage taken|ranged accuracy|ranged attack|snapshot|rapid shot|store tp',
 		pet = 'physical damage taken|magic damage taken|pet: regen|pet: physical damage taken|pet: magic damage taken|pet: magic attack bonus|pet: magic damage|pet: attack|pet: double attack|pet: accuracy|pet: magic accuracy|pet: haste',
@@ -74,7 +74,7 @@ roles = {
     DNC = 'role:dd',
     SCH = 'role:heal|enhancing magic duration|magic attack bonus|magic burst damage|magic burst damage ii|magic accuracy',
     GEO = 'role:pet|indicolure effect duration|handbell skill|geomancy skill|geomancy',
-    RUN = 'role:tank|inquartata',
+    RUN = 'role:tank|inquartata|parrying skill',
     levelfilter = 99,
 }
 settings = config.load(defaults)
@@ -83,7 +83,8 @@ current_mode = 'default'
 tbl = {}
 
 windower.register_event('addon command',function(...)
-    local args = {...}
+	config.reload(settings)   
+   local args = {...}
     
     -- Handle mode switching if an argument is provided
     if args[1] then
@@ -147,7 +148,6 @@ windower.register_event('incoming chunk',function(id,data)
 end)
 
 function get_text(id,data,slot) -- Add slot here
-    config.reload(settings)
     local descriptions = res.item_descriptions[id]
     local helptext = descriptions and descriptions.english or '' 
     local stats = windower.regex.split(helptext,'(Pet|Avatar|Automaton|Wyvern|Luopan): ')
@@ -627,6 +627,7 @@ abbreviations = {
     ['subtle blow ii'] = 'SB II',
 	['defense'] = 'DEF',
 	['hp']='HP',
+	['parrying skill'] = 'Parry Skill',
     -- You can add as many as you want here!
 }
 caps={
