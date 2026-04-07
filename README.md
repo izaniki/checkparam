@@ -58,22 +58,23 @@ FORK Readme:
 **Subtle Blow should correctly be capping each category at 50, while providing the total amount overall (so it will not give you a cap of 75 if you have SB1 at 65 and SB2 at 10).
 
 **The following DW categories have been added to show how much DW is needed for various amounts of haste (the number) and whether you are getting haste samba from a DNC sub or main (S and M respectively). The cap shown will vary based on which you choose, it will have the amounts provided by traits automatically added, and then show how much you need to cap.
-Stat Name = Cap
-['dw0'] = 64,
-['dw10'] = 60,
-['dw15'] = 57,
-['dw30'] = 46,
-['dwcap']=26,
-['dw0s'] = 62,
-['dw10s'] = 57,
-['dw15s'] = 54,
-['dw30s'] = 40,
-['dwcaps']=14,
-['dw0m'] = 60,
-['dw10m'] = 54,
-['dw15m'] = 50,
-['dw30m'] = 33,
-['dwcapm']=0
+
+Stat Name = Cap <br>
+['dw0'] = 64,<br>
+['dw10'] = 60,<br>
+['dw15'] = 57,<br>
+['dw30'] = 46,<br>
+['dwcap']=26,<br>
+['dw0s'] = 62,<br>
+['dw10s'] = 57,<br>
+['dw15s'] = 54,<br>
+['dw30s'] = 40,<br>
+['dwcaps']=14,<br>
+['dw0m'] = 60,<br>
+['dw10m'] = 54,<br>
+['dw15m'] = 50,<br>
+['dw30m'] = 33,<br>
+['dwcapm']=0<br>
 
 
 **The following command has been added:
