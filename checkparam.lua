@@ -147,7 +147,7 @@ windower.register_event('incoming chunk',function(id,data)
     end
 end)
 
-function get_text(id,data,slot) 
+function get_text(id,data,slot) -- Add slot here
     local descriptions = res.item_descriptions[id]
     local helptext = descriptions and descriptions.english or '' 
     local stats = windower.regex.split(helptext,'(Pet|Avatar|Automaton|Wyvern|Luopan): ')
@@ -156,7 +156,7 @@ function get_text(id,data,slot)
     end
     if stats[2] then
         stats[2] = stats[2]:trim()
-        split_text(id,stats[2],'pet: ',slot) 
+        split_text(id,stats[2],'pet: ',slot) -- Add slot here
     end
     local ext = extdata.decode({id=id,extdata=data})
     if ext.augments then
@@ -164,9 +164,9 @@ function get_text(id,data,slot)
             local stats = windower.regex.split(v,'(Pet|Avatar|Automaton|Wyvern|Luopan): ')
             if stats[2] then
                 stats[2] = stats[2]:trim()
-                split_text(id,stats[2],'pet: ',slot) 
+                split_text(id,stats[2],'pet: ',slot) -- Add slot here
             else
-                split_text(id,v,nil,slot) 
+                split_text(id,v,nil,slot) -- Add slot here
             end
         end
     end
@@ -300,7 +300,7 @@ function show_results(name,mjob,sjob)
                 if settings.roles[r] then
                     return settings.roles[r]
                 else
-                    return 'role:' .. role_match 
+                    return 'role:' .. role_match -- Keep it as-is if the role doesn't exist
                 end
             end)
         end
@@ -313,13 +313,13 @@ function show_results(name,mjob,sjob)
     end
 	coroutine.sleep(0.1)
     windower.add_to_chat(160,string.color(name,1,160)..': '..string.color(head,160,160))
-    local printed_stats = {} 
+    local printed_stats = {} -- Table to track what we have already output
 
     for index,key in ipairs(windower.regex.split(stats,'[|]')) do
-      
+        -- Make it lowercase AND trim any hidden spaces/newlines
         key = string.lower(key):trim()
         
-        
+        -- Only proceed if we haven't printed this stat yet
         if not printed_stats[key] then
             printed_stats[key] = true 
             
@@ -329,7 +329,7 @@ function show_results(name,mjob,sjob)
             local color = {value and 1 or 160,value and 166 or 160, 106, 205, 61}
             local stat_cap = caps[key]
             
-            
+            -- Look up the abbreviation
             local display_key = abbreviations[key] or key
             
             local output_string = ' ['..string.color(display_key,color[1],160)..']'
@@ -598,11 +598,11 @@ abbreviations = {
     ['subtle blow'] = 'SB',
     ['dual wield'] = 'DW',
     ['martial arts'] = 'MA',
-    ['cure potency'] = 'Cure Pot',
-    ['cure potency ii'] = 'Cure Pot II',
-    ['potency of cure effects received'] = 'Cure Rec',
-    ['song spellcasting time'] = 'Song Cast',
-    ['song effect duration'] = 'Song Dur',
+    ['cure potency'] = 'CurePot',
+    ['cure potency ii'] = 'CurePotII',
+    ['potency of cure effects received'] = 'CureRec',
+    ['song spellcasting time'] = 'SongCast',
+    ['song effect duration'] = 'SongDur',
 	['magic damage']='MDmg',
 	['magic accuracy']='MAcc',
 	['ranged accuracy']='RAcc',
@@ -626,11 +626,15 @@ abbreviations = {
     ['dw15m'] = 'DW (15% main samba)',
     ['dw30m'] = 'DW (30% main samba)',
 	['dwcapm']='DW (cap main samba)',
-	['total subtle blow'] = 'Total SB',
-    ['subtle blow ii'] = 'SB II',
+	['total subtle blow'] = 'TotalSB',
+    ['subtle blow ii'] = 'SBII',
 	['defense'] = 'DEF',
 	['hp']='HP',
-	['parrying skill'] = 'Parry Skill',
+	['parrying skill'] = 'ParrySkill',
+	['mnd'] = 'MND',
+	['regen'] = 'Regen',
+	['int'] = 'INT',
+	
     -- You can add as many as you want here!
 }
 caps={
