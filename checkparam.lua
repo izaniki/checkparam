@@ -147,7 +147,7 @@ windower.register_event('incoming chunk',function(id,data)
     end
 end)
 
-function get_text(id,data,slot) -- Add slot here
+function get_text(id,data,slot) 
     local descriptions = res.item_descriptions[id]
     local helptext = descriptions and descriptions.english or '' 
     local stats = windower.regex.split(helptext,'(Pet|Avatar|Automaton|Wyvern|Luopan): ')
@@ -156,7 +156,7 @@ function get_text(id,data,slot) -- Add slot here
     end
     if stats[2] then
         stats[2] = stats[2]:trim()
-        split_text(id,stats[2],'pet: ',slot) -- Add slot here
+        split_text(id,stats[2],'pet: ',slot) 
     end
     local ext = extdata.decode({id=id,extdata=data})
     if ext.augments then
@@ -164,9 +164,9 @@ function get_text(id,data,slot) -- Add slot here
             local stats = windower.regex.split(v,'(Pet|Avatar|Automaton|Wyvern|Luopan): ')
             if stats[2] then
                 stats[2] = stats[2]:trim()
-                split_text(id,stats[2],'pet: ',slot) -- Add slot here
+                split_text(id,stats[2],'pet: ',slot) 
             else
-                split_text(id,v,nil,slot) -- Add slot here
+                split_text(id,v,nil,slot) 
             end
         end
     end
@@ -300,7 +300,7 @@ function show_results(name,mjob,sjob)
                 if settings.roles[r] then
                     return settings.roles[r]
                 else
-                    return 'role:' .. role_match -- Keep it as-is if the role doesn't exist
+                    return 'role:' .. role_match 
                 end
             end)
         end
@@ -313,13 +313,13 @@ function show_results(name,mjob,sjob)
     end
 	coroutine.sleep(0.1)
     windower.add_to_chat(160,string.color(name,1,160)..': '..string.color(head,160,160))
-    local printed_stats = {} -- Table to track what we have already output
+    local printed_stats = {} 
 
     for index,key in ipairs(windower.regex.split(stats,'[|]')) do
-        -- Make it lowercase AND trim any hidden spaces/newlines
+      
         key = string.lower(key):trim()
         
-        -- Only proceed if we haven't printed this stat yet
+        
         if not printed_stats[key] then
             printed_stats[key] = true 
             
@@ -329,7 +329,7 @@ function show_results(name,mjob,sjob)
             local color = {value and 1 or 160,value and 166 or 160, 106, 205, 61}
             local stat_cap = caps[key]
             
-            -- Look up the abbreviation
+            
             local display_key = abbreviations[key] or key
             
             local output_string = ' ['..string.color(display_key,color[1],160)..']'
