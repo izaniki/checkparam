@@ -76,6 +76,12 @@ Stat Name = Cap <br>
 ['dw30m'] = 33,<br>
 ['dwcapm']=0<br>
 
+4/19 Update: Added TPGain Stats.
+TPGain shows the amount of TP gained from various forms of Multihit as well as STP without complex math.
+
+TPGain+ shows the synergistic relationship between STP and Multihit by including the added benefit to the calculation (e.g. 1 QA = 1.5 TA = 3 DA = 3 STP = 3% more TP gained; but if you have 100 STP, it's equal to 6% more TP gained)
+
+TPGainPro shows what TPGain+ does, but also includes calculations for the cannibalistic nature of multihit where priority of procs goes QA > TA > DA > (OAX) > Zanshin/Hasso so the more you have of the higher priority stats, the less benefit you get from the lower ones for TP gain. This one is still a work in progress as it will take more complex math to work everything out.
 
 **The following command has been added:
 

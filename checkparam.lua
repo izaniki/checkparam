@@ -43,7 +43,7 @@ defaults = {
 roles = {
 		idle='physical damage taken|magic damage taken|magic evasion|evasion|magic defense bonus|defense|refresh|regen',
         idle2='physical damage taken|magic damage taken|magic evasion|evasion|magic defense bonus|defense|refresh|regen|HP|VIT|MND|INT',
-		dd = 'physical damage taken|magic damage taken|haste|store tp|multi attack|attack|accuracy|critical hit rate|weapon skill damage',
+		dd = 'physical damage taken|magic damage taken|haste|store tp|multi attack|tpgain|tpgain+|attack|accuracy|critical hit rate|weapon skill damage',
         heal = 'physical damage taken|magic damage taken|cure potency|cure potency ii|fast cast|quick cast|enmity|refresh|spell interruption rate down|conserve mp|healing magic skill|MND',
         tank = 'physical damage taken|magic damage taken|enmity|spell interruption rate down|HP|MP|fast cast|magic evasion|magic defense bonus|evasion|defense|phalanx',
         mage = 'physical damage taken|magic damage taken|magic attack bonus|magic burst damage|magic burst damage ii|magic accuracy|fast cast',
@@ -257,6 +257,52 @@ function show_results(name,mjob,sjob)
 
   --Combine DA, TA, and QA into a single "multi attack" stat
     tbl['multi attack'] = (tbl['double attack'] or 0) + (tbl['triple attack'] or 0) + (tbl['quadruple attack'] or 0)
+	-- TPGain Calculations
+    local qa = tbl['quadruple attack'] or 0
+    local ta = tbl['triple attack'] or 0
+    local da = tbl['double attack'] or 0
+    local stp = tbl['store tp'] or 0
+
+    -- Calculate base multi-hit gain (QA=3%, TA=2%, DA=1%)
+    local base_multi_gain = (qa * 3) + (ta * 2) + (da * 1)
+    
+    tbl['tpgain'] = base_multi_gain + stp
+    tbl['tpgain+'] = stp + (base_multi_gain * (1 + (stp / 100)))
+	
+	-- TPGainPro Calculation (EAR_ladder with cannibalization)
+    -- Convert stats to probabilities (decimals)
+    local qa_prob = (tbl['quadruple attack'] or 0) / 100
+    local ta_prob = (tbl['triple attack'] or 0) / 100
+    local da_prob = (tbl['double attack'] or 0) / 100
+    local zan_prob = (tbl['zanshin'] or 0) / 100
+    
+    -- Placeholders for future OAX integration
+    local oax_prob = 0 -- Replace with (tbl['oax'] or 0) / 100 later
+    local e_oa = 0     -- Replace with expected extra hits later
+
+    -- Cap probabilities at 1.0 (100%) so the math doesn't break if a stat exceeds cap
+    qa_prob = math.min(qa_prob, 1.0)
+    ta_prob = math.min(ta_prob, 1.0)
+    da_prob = math.min(da_prob, 1.0)
+    zan_prob = math.min(zan_prob, 1.0)
+    oax_prob = math.min(oax_prob, 1.0)
+
+    -- EAR_ladder formula: Calculates average extra hits per attack round
+    local ear_ladder = (qa_prob * 3) + 
+                       ((1 - qa_prob) * ta_prob * 2) + 
+                       ((1 - qa_prob) * (1 - ta_prob) * da_prob * 1) + 
+                       ((1 - qa_prob) * (1 - ta_prob) * (1 - da_prob) * (oax_prob * e_oa)) + 
+                       ((1 - qa_prob) * (1 - ta_prob) * (1 - da_prob) * (1 - oax_prob) * zan_prob)
+
+    -- Convert the expected extra hits back to a percentage base
+    local base_pro_gain = ear_ladder * 100
+    
+    -- Final TPGainPro Calculation (includes Store TP multiplier)
+    local stp = tbl['store tp'] or 0
+    tbl['tpgainpro'] = stp + (base_pro_gain * (1 + (stp / 100)))
+    
+    -- Format to 2 decimal places to keep the chat log clean
+    tbl['tpgainpro'] = tonumber(string.format("%.2f", tbl['tpgainpro']))
 
     -- Clone total dual wield into specific haste tier buckets
     local dw_total = tbl['dual wield'] or 0
@@ -534,7 +580,7 @@ main_job_traits = {
     ['BLM'] = {['magic attack bonus']=40},
     ['RDM'] = {['magic attack bonus']=28,['fast cast'] = 38},
     ['THF'] = {['dual wield']=30},
-    ['PLD'] = {['cure potency II']=25},
+    ['PLD'] = {['cure potency ii']=25,['spell interruption rate down']=10},
     ['DRK'] = {},
     ['BST'] = {},
     ['BRD'] = {},
@@ -549,7 +595,7 @@ main_job_traits = {
     ['DNC'] = {['dual wield']=35},
     ['SCH'] = {},
     ['GEO'] = {},
-    ['RUN'] = {['magic defense bonus']=22},
+    ['RUN'] = {['magic defense bonus']=22,['spell interruption rate down']=10},
 }
 
 sub_job_traits = {
@@ -634,6 +680,9 @@ abbreviations = {
 	['mnd'] = 'MND',
 	['regen'] = 'Regen',
 	['int'] = 'INT',
+	['tpgain'] = 'TPGain',
+    ['tpgain+'] = 'TPGain+',
+	['tpgainpro'] = 'TPGainPro',
 	
     -- You can add as many as you want here!
 }
