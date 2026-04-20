@@ -39,7 +39,7 @@ please tell me on Twitter [@from20020516](https://twitter.com/from20020516) **wi
 FORK Readme:
 
 
-<img width="304" height="273" alt="image" src="https://github.com/user-attachments/assets/e92f235b-75a1-45ad-be29-5fe5f05060d6" />
+<img width="705" height="297" alt="image" src="https://github.com/user-attachments/assets/940ccf6b-9b0a-4eb4-ae13-5083f3632872" />
 
 
 **Commands changed to //chp from //cp
@@ -84,7 +84,7 @@ TPGain+ shows the synergistic relationship between STP and Multihit by including
 
 TPGainPro shows what TPGain+ does, but also includes calculations for the cannibalistic nature of multihit where priority of procs goes QA > TA > DA > (OAX) > Zanshin/Hasso so the more you have of the higher priority stats, the less benefit you get from the lower ones for TP gain. This one is still a work in progress as it will take more complex math to work everything out.
 
-Also, color-coded the stats that make up the values in MultiHit and TPGain (working on the other TPGain stats) to show the contributions from each factored stat. MultiHit goes QA,TA,DA. TPGain goes QA,TA,DA,STP (these are the % of TP Gain they provide, not the number of that stat on your gear, so QA/TA will be 3/2 times more than those).
+Also, color-coded the stats that make up the values in MultiHit and TPGain (working on the other TPGain stats) to show the contributions from each factored stat. MultiHit goes QA,TA,DA. TPGain goes QA,TA,DA,STP (these are the % of TP Gain they provide, not the number of that stat on your gear, so QA/TA will be 3/2 times more than those). TPGain+ has the additional benefit from the STP broken down in [ ] brackets after each value, so if it says (+9%[+3.15%]...), you're getting 12.15% additional TP from your QA after the STP contribution is added in.
 
 **The following command has been added:
 
