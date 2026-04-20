@@ -375,13 +375,55 @@ function show_results(name,mjob,sjob)
             local color = {value and 1 or 160,value and 166 or 160, 106, 205, 61}
             local stat_cap = caps[key]
             
-            -- Look up the abbreviation
+          -- Look up the abbreviation
             local display_key = abbreviations[key] or key
             
-            local output_string = ' ['..string.color(display_key,color[1],160)..']'
+            -- >>> BEGIN CUSTOM COLOR LOGIC <<<
+            local key_col = color[1]
+            local val_col = color[2]
+            local display_value = tostring(value)
+
+            if key == 'quadruple attack' then
+                val_col = 204
+            elseif key == 'triple attack' then
+                val_col = 206
+            elseif key == 'double attack' then
+                val_col = 205
+            elseif key == 'store tp' then
+                val_col = 208
+            elseif key == 'multi attack' then
+                local qa = tbl['quadruple attack'] or 0
+                local ta = tbl['triple attack'] or 0
+                local da = tbl['double attack'] or 0
+                local total_ma = qa + ta + da
+                
+                display_value = total_ma .. ' (' .. 
+                    string.color(tostring(qa), 204, val_col) .. ', ' .. 
+                    string.color(tostring(ta), 206, val_col) .. ', ' .. 
+                    string.color(tostring(da), 205, val_col) .. ')'
+            elseif key == 'tpgain' then
+                local qa = tbl['quadruple attack'] or 0
+                local ta = tbl['triple attack'] or 0
+                local da = tbl['double attack'] or 0
+                local stp = tbl['store tp'] or 0
+                
+                -- Calculate actual TP percentage contributions
+                local qa_gain = qa * 3
+                local ta_gain = ta * 2
+                local da_gain = da * 1
+                
+                display_value = display_value .. ' (' .. 
+                    string.color(tostring(qa_gain), 204, val_col) .. ', ' .. 
+                    string.color(tostring(ta_gain), 206, val_col) .. ', ' .. 
+                    string.color(tostring(da_gain), 205, val_col) .. ', ' ..
+                    string.color(tostring(stp), 208, val_col) .. ')'
+            end
             
+            local output_string = ' ['..string.color(display_key, key_col, 160)..']'
+            -- >>> END CUSTOM COLOR LOGIC <<<
+
             if stat_cap == nil or value == nil then
-                output_string = output_string..' '..string.color(tostring(value),color[2],160)
+                output_string = output_string..' '..string.color(display_value, val_col, 160)
             
             
             elseif type(stat_cap) == 'table' then

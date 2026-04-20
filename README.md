@@ -83,6 +83,8 @@ TPGain+ shows the synergistic relationship between STP and Multihit by including
 
 TPGainPro shows what TPGain+ does, but also includes calculations for the cannibalistic nature of multihit where priority of procs goes QA > TA > DA > (OAX) > Zanshin/Hasso so the more you have of the higher priority stats, the less benefit you get from the lower ones for TP gain. This one is still a work in progress as it will take more complex math to work everything out.
 
+Also, color-coded the stats that make up the values in MultiHit and TPGain (working on the other TPGain stats) to show the contributions from each factored stat. MultiHit goes QA,TA,DA. TPGain goes QA,TA,DA,STP (these are the % of TP Gain they provide, not the number of that stat on your gear, so QA/TA will be 3/2 times more than those).
+
 **The following command has been added:
 
 //chp (or //checkparam) role
