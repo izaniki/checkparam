@@ -170,11 +170,16 @@ function get_text(id,data,slot) -- Add slot here
             end
         end
     end
-    if enhanced[id] then
-        local stats = enhanced[id]:gsub('([+-:][0-9]+)',',%1'):split(',')
-        tbl[stats[1]] = tonumber(stats[2]) + (tbl[stats[1]] or 0)
-        if settings.debugmode then
-            log(id,res.items[id].english,stats[1],stats[2],tbl[stats[1]])
+  if enhanced[id] then
+        -- Split by pipe to handle multiple stats for one item ID
+        for _, entry in ipairs(enhanced[id]:split('|')) do
+            local stats = entry:gsub('([+-:][0-9]+)',',%1'):split(',')
+            if stats[1] and stats[2] then
+                tbl[stats[1]] = tonumber(stats[2]) + (tbl[stats[1]] or 0)
+                if settings.debugmode then
+                    log(id,res.items[id].english,stats[1],stats[2],tbl[stats[1]])
+                end
+            end
         end
     end
     tbl.sets = tbl.sets or {}
@@ -770,6 +775,10 @@ enhanced = {
     [28637] = 'fast cast+7', --Lifestream Cape
     [11618] = 'song effect duration+10', -- Aoidos' Matinee
     [20629] = 'song effect duration+5', -- Legato Dagger
+	[27149] = 'triple attack+4|accuracy+40|strength+10|dexterity+10', --Tatenashi Gote+1
+	[25924] = 'triple attack+3|accuracy+60|strength+10|dexterity+10',--Tatenashi Sune-ate+1
+	[28428] = 'double attack+5|strength+15',--Sailfi Belt+1
+	
 }
 combination={
     ['af']={item=S{
