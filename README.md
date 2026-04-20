@@ -86,6 +86,10 @@ TPGainPro shows what TPGain+ does, but also includes calculations for the cannib
 
 Also, color-coded the stats that make up the values in MultiHit and TPGain (working on the other TPGain stats) to show the contributions from each factored stat. MultiHit goes QA,TA,DA. TPGain goes QA,TA,DA,STP (these are the % of TP Gain they provide, not the number of that stat on your gear, so QA/TA will be 3/2 times more than those). TPGain+ has the additional benefit from the STP broken down in [ ] brackets after each value, so if it says (+9%[+3.15%]...), you're getting 12.15% additional TP from your QA after the STP contribution is added in.
 
+Added TPGain stats that take into account Zanshin/Hasso. These are TPGainZ, TPGainZ+, TPGainZPro. They are the same as the above stats, with Zanshin added in between DA and STP. The values in [] that have minuses are showing the cannibalization of proc chances from higher-order multiattack stats (and yes, the values for Zanshin swing that much). 
+
+For all of these, I added them to the defaults for DD/SAM, so look at the ones you want and remove the others from your settings file (ALSO, don't forget to delete/adjust your settings file to see the new stats).
+
 **The following command has been added:
 
 //chp (or //checkparam) role
