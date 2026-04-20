@@ -416,9 +416,9 @@ function show_results(name,mjob,sjob)
                 local da_gain = da * 1
                 
                 display_value = '+' .. display_value .. '% (' .. 
-                    string.color('+' .. tostring(qa_gain) .. '%', 204, val_col) .. ', ' .. 
-                    string.color('+' .. tostring(ta_gain) .. '%', 206, val_col) .. ', ' .. 
-                    string.color('+' .. tostring(da_gain) .. '%', 205, val_col) .. ', ' ..
+                    string.color('+' .. tostring(qa_gain) .. '%', 204, val_col) .. ',' .. 
+                    string.color('+' .. tostring(ta_gain) .. '%', 206, val_col) .. ',' .. 
+                    string.color('+' .. tostring(da_gain) .. '%', 205, val_col) .. ',' ..
                     string.color('+' .. tostring(stp) .. '%', 208, val_col) .. ')'
             elseif key == 'tpgainz' then
                 local qa = tbl['quadruple attack'] or 0
@@ -435,10 +435,10 @@ function show_results(name,mjob,sjob)
                 local zan_gain = zan_eff * ZAN_TP_MULT
                 
                 display_value = '+' .. display_value .. '% (' .. 
-                    string.color('+' .. tostring(qa_gain) .. '%', 204, val_col) .. ', ' .. 
-                    string.color('+' .. tostring(ta_gain) .. '%', 206, val_col) .. ', ' .. 
-                    string.color('+' .. tostring(da_gain) .. '%', 205, val_col) .. ', ' ..
-                    string.color('+' .. string.format("%.2f", zan_gain) .. '%', 167, val_col) .. ', ' ..
+                    string.color('+' .. tostring(qa_gain) .. '%', 204, val_col) .. ',' .. 
+                    string.color('+' .. tostring(ta_gain) .. '%', 206, val_col) .. ',' .. 
+                    string.color('+' .. tostring(da_gain) .. '%', 205, val_col) .. ',' ..
+                    string.color('+' .. string.format("%.2f", zan_gain) .. '%', 167, val_col) .. ',' ..
                     string.color('+' .. tostring(stp) .. '%', 208, val_col) .. ')'
             elseif key == 'tpgain+' then
                 local qa = tbl['quadruple attack'] or 0
@@ -461,7 +461,7 @@ function show_results(name,mjob,sjob)
                 local da_str = string.color('+' .. da_gain .. '%', 205, val_col) .. string.color('[+' .. da_bonus .. '%]', 208, val_col)
                 local stp_str = string.color('+' .. stp .. '%', 208, val_col) .. string.color('[+' .. total_bonus .. '%]', 208, val_col)
                 
-                display_value = '+' .. display_value .. '%\n     (' .. qa_str .. ', ' .. ta_str .. ', ' .. da_str .. ', ' .. stp_str .. ')'
+                display_value = '+' .. display_value .. '% (' .. qa_str .. ',' .. ta_str .. ',' .. da_str .. ',' .. stp_str .. ')'
             elseif key == 'tpgainz+' then
                 local qa = tbl['quadruple attack'] or 0
                 local ta = tbl['triple attack'] or 0
@@ -490,7 +490,7 @@ function show_results(name,mjob,sjob)
                 local zan_str = string.color('+' .. string.format("%.2f", zan_gain) .. '%', 167, val_col) .. string.color('[+' .. zan_bonus .. '%]', 208, val_col)
                 local stp_str = string.color('+' .. stp .. '%', 208, val_col) .. string.color('[+' .. total_bonus .. '%]', 208, val_col)
                 
-                display_value = '+' .. display_value .. '%\n     (' .. qa_str .. ', ' .. ta_str .. ', ' .. da_str .. ', ' .. zan_str .. ', ' .. stp_str .. ')'
+                display_value = '+' .. display_value .. '%\n('.. qa_str ..','.. ta_str ..','.. da_str ..','.. zan_str ..','.. stp_str ..')'
             elseif key == 'tpgainzpro' then
                 local qa = tbl['quadruple attack'] or 0
                 local ta = tbl['triple attack'] or 0
@@ -554,7 +554,7 @@ function show_results(name,mjob,sjob)
                 local stp_str = string.color('+' .. stp .. '%', 208, val_col) .. 
                                 string.color('[+' .. fmt(total_bonus) .. '%]', 208, val_col)
                 
-                display_value = '+' .. display_value .. '%\n     (' .. qa_str .. ', ' .. ta_str .. ', ' .. da_str .. ', ' .. zan_str .. ', ' .. stp_str .. ')'
+                display_value = '+' .. display_value .. '%\n (' .. qa_str ..','..ta_str..','..da_str ..',\n     '.. zan_str ..',' .. stp_str ..')'
             elseif key == 'tpgainpro' then
                 local qa = tbl['quadruple attack'] or 0
                 local ta = tbl['triple attack'] or 0
