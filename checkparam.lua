@@ -375,7 +375,7 @@ function show_results(name,mjob,sjob)
             local color = {value and 1 or 160,value and 166 or 160, 106, 205, 61}
             local stat_cap = caps[key]
             
-          -- Look up the abbreviation
+        -- Look up the abbreviation
             local display_key = abbreviations[key] or key
             
             -- >>> BEGIN CUSTOM COLOR LOGIC <<<
@@ -407,16 +407,40 @@ function show_results(name,mjob,sjob)
                 local da = tbl['double attack'] or 0
                 local stp = tbl['store tp'] or 0
                 
-                -- Calculate actual TP percentage contributions
                 local qa_gain = qa * 3
                 local ta_gain = ta * 2
                 local da_gain = da * 1
                 
-                display_value = display_value .. ' (' .. 
-                    string.color(tostring(qa_gain), 204, val_col) .. ', ' .. 
-                    string.color(tostring(ta_gain), 206, val_col) .. ', ' .. 
-                    string.color(tostring(da_gain), 205, val_col) .. ', ' ..
-                    string.color(tostring(stp), 208, val_col) .. ')'
+                display_value = '+' .. display_value .. '% (' .. 
+                    string.color('+' .. tostring(qa_gain) .. '%', 204, val_col) .. ', ' .. 
+                    string.color('+' .. tostring(ta_gain) .. '%', 206, val_col) .. ', ' .. 
+                    string.color('+' .. tostring(da_gain) .. '%', 205, val_col) .. ', ' ..
+                    string.color('+' .. tostring(stp) .. '%', 208, val_col) .. ')'
+            elseif key == 'tpgain+' then
+                local qa = tbl['quadruple attack'] or 0
+                local ta = tbl['triple attack'] or 0
+                local da = tbl['double attack'] or 0
+                local stp = tbl['store tp'] or 0
+                
+                local qa_gain = qa * 3
+                local ta_gain = ta * 2
+                local da_gain = da * 1
+                local stp_mult = stp / 100
+                
+                local qa_bonus = string.format("%g", qa_gain * stp_mult)
+                local ta_bonus = string.format("%g", ta_gain * stp_mult)
+                local da_bonus = string.format("%g", da_gain * stp_mult)
+                local total_bonus = string.format("%g", (qa_gain + ta_gain + da_gain) * stp_mult)
+                
+                local qa_str = string.color('+' .. qa_gain .. '%', 204, val_col) .. string.color('[+' .. qa_bonus .. '%]', 208, val_col)
+                local ta_str = string.color('+' .. ta_gain .. '%', 206, val_col) .. string.color('[+' .. ta_bonus .. '%]', 208, val_col)
+                local da_str = string.color('+' .. da_gain .. '%', 205, val_col) .. string.color('[+' .. da_bonus .. '%]', 208, val_col)
+                local stp_str = string.color('+' .. stp .. '%', 208, val_col) .. string.color('[+' .. total_bonus .. '%]', 208, val_col)
+                
+                -- Line break added here with 5 spaces for indentation
+                display_value = '+' .. display_value .. '%\n     (' .. qa_str .. ', ' .. ta_str .. ', ' .. da_str .. ', ' .. stp_str .. ')'
+            elseif key == 'tpgainpro' then
+                display_value = '+' .. display_value .. '%'
             end
             
             local output_string = ' ['..string.color(display_key, key_col, 160)..']'
