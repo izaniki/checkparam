@@ -45,7 +45,7 @@ roles = {
         idle2='physical damage taken|magic damage taken|magic evasion|evasion|magic defense bonus|defense|refresh|regen|HP|VIT|MND|INT',
 		dd = 'physical damage taken|magic damage taken|haste|store tp|multi attack|tpgain|attack|accuracy|critical hit rate|weapon skill damage|tpgain+|tpgainpro',
         heal = 'physical damage taken|magic damage taken|cure potency|cure potency ii|fast cast|quick cast|enmity|refresh|spell interruption rate down|conserve mp|healing magic skill|MND',
-        tank = 'physical damage taken|magic damage taken|enmity|spell interruption rate down|HP|MP|fast cast|magic evasion|magic defense bonus|evasion|defense|phalanx',
+        tank = 'physical damage taken|physical damage taken ii|magic damage taken|magic damage taken ii|enmity|spell interruption rate down|HP|MP|fast cast|magic evasion|magic defense bonus|evasion|defense|phalanx',
         mage = 'physical damage taken|magic damage taken|magic attack bonus|magic burst damage|magic burst damage ii|magic accuracy|fast cast',
         range = 'physical damage taken|magic damage taken|ranged accuracy|ranged attack|snapshot|rapid shot|store tp',
 		pet = 'physical damage taken|magic damage taken|pet: regen|pet: physical damage taken|pet: magic damage taken|pet: magic attack bonus|pet: magic damage|pet: attack|pet: double attack|pet: accuracy|pet: magic accuracy|pet: haste',
@@ -189,7 +189,7 @@ end
 function split_text(id,text,arg,slot)
     for key,value in string.gmatch(text,'/?([%D]-):?([%+%-]?[0-9]+)%%?%s?') do
         local key = windower.regex.replace(string.lower(key),'(\\"|\\.|\\s$)','')
-        local key = integrate[key] or key
+		        local key = integrate[key] or key
         local key = arg and arg..key or key
         if key == "blood pact damage" then
             key = "pet: blood pact damage"
@@ -702,6 +702,11 @@ integrate = {
     ['hasso:haste'] = 'hasso', -- Added without a space just in case a future item typos it
     
     ['song duration']="song effect duration",
+	
+	['physical damage taken  ii'] = 'physical damage taken ii', -- Double space
+    ['physical damage taken ⅱ'] = 'physical damage taken ii', -- Full-width unicode roman numeral
+    ['magic damage taken  ii'] = 'magic damage taken ii',
+    ['magic damage taken ⅱ'] = 'magic damage taken ii',
 }
 enhanced = {
     [10392] = 'cursna+10', --Malison Medallion
@@ -778,6 +783,18 @@ enhanced = {
 	[27149] = 'triple attack+4|accuracy+40|strength+10|dexterity+10', --Tatenashi Gote+1
 	[25924] = 'triple attack+3|accuracy+60|strength+10|dexterity+10',--Tatenashi Sune-ate+1
 	[28428] = 'double attack+5|strength+15',--Sailfi Belt+1
+	-- PDT2
+    [20687] = 'physical damage taken ii-18', -- Burtgang (ILvl 119)
+    [20753] = 'physical damage taken ii-25', -- Epeolatry (ILvl 119)
+	[21685] = 'physical damage taken ii-25', -- Epeolatry (ILvl 119) Afterglow
+    [20761] = 'physical damage taken ii-5',  -- Aettir
+
+    -- MDT2
+    [11927] = 'magic damage taken ii-50',    -- Aegis (Lv 99)
+    [16200] = 'magic damage taken ii-50',    -- Aegis (Lv 99) Afterglow
+    [26493] = 'magic damage taken ii-15',    -- Duban Stage 3
+    [26494] = 'magic damage taken ii-20',    -- Duban Stage 4
+    [26495] = 'magic damage taken ii-25',    -- Duban Stage 5
 	
 }
 combination={
@@ -874,9 +891,11 @@ abbreviations = {
     ['magic defense bonus'] = 'MDB',
     ['magic attack bonus'] = 'MAB',
     ['magic burst damage'] = 'MBD',
-    ['magic burst damage ii'] = 'MBD II',
+    ['magic burst damage ii'] = 'MBD2',
     ['physical damage taken'] = 'PDT',
     ['magic damage taken'] = 'MDT',
+	 ['physical damage taken ii'] = 'PDT2',
+    ['magic damage taken ii'] = 'MDT2',
     ['damage taken'] = 'DT',
     ['breath damage taken'] = 'BDT',
     ['weapon skill damage'] = 'WSD',
