@@ -263,11 +263,14 @@ function show_results(name,mjob,sjob)
   --Combine DA, TA, and QA into a single "multi attack" stat
     tbl['multi attack'] = (tbl['double attack'] or 0) + (tbl['triple attack'] or 0) + (tbl['quadruple attack'] or 0)
 	-- TPGain Calculations
+    -- TPGain Calculations
     local qa = tbl['quadruple attack'] or 0
     local ta = tbl['triple attack'] or 0
     local da = tbl['double attack'] or 0
     local stp = tbl['store tp'] or 0
-    local zan = math.min(tbl['zanshin'] or 0, 100)
+    local zan = tbl['zanshin'] or 0
+    
+   local zan_oat = tbl['zanshin: oat'] or 0
 
     -- Calculate base multi-hit gain (QA=3%, TA=2%, DA=1%)
     local base_multi_gain = (qa * 3) + (ta * 2) + (da * 1)
@@ -277,7 +280,8 @@ function show_results(name,mjob,sjob)
 
     -- Zanshin TPGain Calculations (Raw/Additive)
     local ZAN_TP_MULT = 2.22 
-    local zan_eff_proc = (zan * 0.25 * 0.95) + (zan * 0.05)
+    local hasso_proc = math.min((zan * 0.25) + zan_oat, 35)
+    local zan_eff_proc = (hasso_proc * 0.95) + (math.min(zan, 100) * 0.05)
     local zan_base_gain = zan_eff_proc * ZAN_TP_MULT
 
     tbl['tpgainz'] = tonumber(string.format("%.2f", base_multi_gain + zan_base_gain + stp))
@@ -287,7 +291,8 @@ function show_results(name,mjob,sjob)
     local qa_prob = math.min(qa / 100, 1.0)
     local ta_prob = math.min(ta / 100, 1.0)
     local da_prob = math.min(da / 100, 1.0)
-    local zan_prob = zan / 100
+    local zan_prob = math.min(zan, 100) / 100
+    local hasso_prob = math.min((zan * 0.25) + zan_oat, 35) / 100
     local oax_prob = 0
     local e_oa = 0
 
@@ -303,7 +308,7 @@ function show_results(name,mjob,sjob)
 
     -- TPGainZPro (Cannibalization Logic)
     local p_no_ma = (1 - qa_prob) * (1 - ta_prob) * (1 - da_prob)
-    local zan_pro_proc = p_no_ma * ((zan_prob * 0.25 * 0.95) + (zan_prob * 0.05))
+    local zan_pro_proc = p_no_ma * ((hasso_prob * 0.95) + (zan_prob * 0.05))
     
     local ear_z_ladder = ear_ladder + (zan_pro_proc * ZAN_TP_MULT)
     local base_z_pro_gain = ear_z_ladder * 100
@@ -429,13 +434,16 @@ function show_results(name,mjob,sjob)
                 local qa = tbl['quadruple attack'] or 0
                 local ta = tbl['triple attack'] or 0
                 local da = tbl['double attack'] or 0
-                local zan = math.min(tbl['zanshin'] or 0, 100)
+                local zan = tbl['zanshin'] or 0
+                
                 local stp = tbl['store tp'] or 0
                 
                 local qa_gain = qa * 3
                 local ta_gain = ta * 2
                 local da_gain = da * 1
-                local zan_eff = (zan * 0.25 * 0.95) + (zan * 0.05)
+                
+                local hasso_proc = math.min((zan * 0.25) + zan_oat, 35)
+                local zan_eff = (hasso_proc * 0.95) + (math.min(zan, 100) * 0.05)
                 local ZAN_TP_MULT = 2.22
                 local zan_gain = zan_eff * ZAN_TP_MULT
                 
@@ -471,7 +479,8 @@ function show_results(name,mjob,sjob)
                 local qa = tbl['quadruple attack'] or 0
                 local ta = tbl['triple attack'] or 0
                 local da = tbl['double attack'] or 0
-                local zan = math.min(tbl['zanshin'] or 0, 100)
+                local zan = tbl['zanshin'] or 0
+                
                 local stp = tbl['store tp'] or 0
                 
                 local qa_gain = qa * 3
@@ -479,7 +488,8 @@ function show_results(name,mjob,sjob)
                 local da_gain = da * 1
                 local stp_mult = stp / 100
                 
-                local zan_eff = (zan * 0.25 * 0.95) + (zan * 0.05)
+                local hasso_proc = math.min((zan * 0.25) + zan_oat, 35)
+                local zan_eff = (hasso_proc * 0.95) + (math.min(zan, 100) * 0.05)
                 local ZAN_TP_MULT = 2.22
                 local zan_gain = zan_eff * ZAN_TP_MULT
                 
@@ -500,7 +510,8 @@ function show_results(name,mjob,sjob)
                 local qa = tbl['quadruple attack'] or 0
                 local ta = tbl['triple attack'] or 0
                 local da = tbl['double attack'] or 0
-                local zan = math.min(tbl['zanshin'] or 0, 100)
+                local zan = tbl['zanshin'] or 0
+                
                 local stp = tbl['store tp'] or 0
                 
                 local qa_prob = math.min(qa / 100, 1.0)
@@ -512,9 +523,12 @@ function show_results(name,mjob,sjob)
                 local qa_raw = qa * 3
                 local ta_raw = ta * 2
                 local da_raw = da * 1
-                local zan_eff = (zan * 0.25 * 0.95) + (zan * 0.05)
+                
+                local zan_prob = math.min(zan, 100) / 100
+                local hasso_prob = math.min((zan * 0.25) + zan_oat, 35) / 100
+                local zan_eff = (hasso_prob * 0.95) + (zan_prob * 0.05)
                 local ZAN_TP_MULT = 2.22
-                local zan_raw = zan_eff * ZAN_TP_MULT
+                local zan_raw = zan_eff * 100 * ZAN_TP_MULT
                 
                 -- Actual gains (post-cannibalization)
                 local qa_act = qa_raw
@@ -646,12 +660,14 @@ function show_results(name,mjob,sjob)
             else
                 output_string = output_string..' '..string.color(tostring(value),color[5],160)..'/'..string.color(tostring(stat_cap),155,160)
             end
-			-- >>> BEGIN ZANSHIN POST-CAP APPEND <<<
+			
+            -- >>> BEGIN ZANSHIN POST-CAP APPEND <<<
             if key == 'zanshin' then
-                local zan_hasso = math.min(value * 0.25, 25)
-                output_string = output_string .. string.color(' (' .. string.format("%g", zan_hasso) .. '%)', val_col, 160)
+                local raw_zan_hasso = (value * 0.25) + zan_oat
+                output_string = output_string .. string.color(' (' .. string.format("%g", raw_zan_hasso) .. '%/35%)', val_col, 160)
             end
             -- >>> END ZANSHIN POST-CAP APPEND <<<
+        
             windower.add_to_chat(160,output_string)
         end
     end
@@ -707,6 +723,8 @@ integrate = {
     ['physical damage taken ⅱ'] = 'physical damage taken ii', -- Full-width unicode roman numeral
     ['magic damage taken  ii'] = 'magic damage taken ii',
     ['magic damage taken ⅱ'] = 'magic damage taken ii',
+    ['zanshin: occasionally attacks twice'] = 'zanshin: oat',
+    ['zanshin: occ attacks twice'] = 'zanshin: oat',
 }
 enhanced = {
     [10392] = 'cursna+10', --Malison Medallion
@@ -795,6 +813,9 @@ enhanced = {
     [26493] = 'magic damage taken ii-15',    -- Duban Stage 3
     [26494] = 'magic damage taken ii-20',    -- Duban Stage 4
     [26495] = 'magic damage taken ii-25',    -- Duban Stage 5
+	
+	[27471] = 'zanshin: oat+10', -- Ryuo Sune-Ate
+    [27472] = 'zanshin: oat+11', -- Ryuo Sune-Ate +1
 	
 }
 combination={
