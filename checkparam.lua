@@ -280,9 +280,13 @@ function show_results(name,mjob,sjob)
 
     -- Zanshin TPGain Calculations (Raw/Additive)
     local ZAN_TP_MULT = 2.22 
-    local hasso_proc = math.min((zan * 0.25) + zan_oat, 35)
-    local zan_eff_proc = (hasso_proc * 0.95) + (math.min(zan, 100) * 0.05)
-    local zan_base_gain = zan_eff_proc * ZAN_TP_MULT
+    local zan_rate = math.min(zan, 100)
+    local hasso_rate = math.min(zan * 0.25, 35)
+    local oat_mult = 1 + (zan_oat / 100)
+    
+    -- Zanshin effective proc rate % (95% hit chance * Hasso rate) + (5% miss chance * Miss rate) * OAT multiplier
+    local zan_eff_pct = ((hasso_rate * 0.95) + (zan_rate * 0.05)) * oat_mult
+    local zan_base_gain = zan_eff_pct * ZAN_TP_MULT
 
     tbl['tpgainz'] = tonumber(string.format("%.2f", base_multi_gain + zan_base_gain + stp))
     tbl['tpgainz+'] = tonumber(string.format("%.2f", stp + ((base_multi_gain + zan_base_gain) * (1 + (stp / 100)))))
@@ -291,8 +295,8 @@ function show_results(name,mjob,sjob)
     local qa_prob = math.min(qa / 100, 1.0)
     local ta_prob = math.min(ta / 100, 1.0)
     local da_prob = math.min(da / 100, 1.0)
-    local zan_prob = math.min(zan, 100) / 100
-    local hasso_prob = math.min((zan * 0.25) + zan_oat, 35) / 100
+    local zan_prob = zan_rate / 100
+    local hasso_prob = hasso_rate / 100
     local oax_prob = 0
     local e_oa = 0
 
@@ -308,7 +312,8 @@ function show_results(name,mjob,sjob)
 
     -- TPGainZPro (Cannibalization Logic)
     local p_no_ma = (1 - qa_prob) * (1 - ta_prob) * (1 - da_prob)
-    local zan_pro_proc = p_no_ma * ((hasso_prob * 0.95) + (zan_prob * 0.05))
+    local base_zan_procs = (hasso_prob * 0.95) + (zan_prob * 0.05)
+    local zan_pro_proc = p_no_ma * (base_zan_procs * oat_mult)
     
     local ear_z_ladder = ear_ladder + (zan_pro_proc * ZAN_TP_MULT)
     local base_z_pro_gain = ear_z_ladder * 100
@@ -435,17 +440,19 @@ function show_results(name,mjob,sjob)
                 local ta = tbl['triple attack'] or 0
                 local da = tbl['double attack'] or 0
                 local zan = tbl['zanshin'] or 0
-                
+                local zan_oat = tbl['zanshin: oat'] or 0
                 local stp = tbl['store tp'] or 0
                 
                 local qa_gain = qa * 3
                 local ta_gain = ta * 2
                 local da_gain = da * 1
                 
-                local hasso_proc = math.min((zan * 0.25) + zan_oat, 35)
-                local zan_eff = (hasso_proc * 0.95) + (math.min(zan, 100) * 0.05)
+                local zan_rate = math.min(zan, 100)
+                local hasso_rate = math.min(zan * 0.25, 35)
+                local oat_mult = 1 + (zan_oat / 100)
+                local zan_eff_pct = ((hasso_rate * 0.95) + (zan_rate * 0.05)) * oat_mult
                 local ZAN_TP_MULT = 2.22
-                local zan_gain = zan_eff * ZAN_TP_MULT
+                local zan_gain = zan_eff_pct * ZAN_TP_MULT
                 
                 display_value = '+' .. display_value .. '% (' .. 
                     string.color('+' .. tostring(qa_gain) .. '%', 204, val_col) .. ',' .. 
@@ -453,34 +460,12 @@ function show_results(name,mjob,sjob)
                     string.color('+' .. tostring(da_gain) .. '%', 205, val_col) .. ',' ..
                     string.color('+' .. string.format("%.2f", zan_gain) .. '%', 167, val_col) .. ',' ..
                     string.color('+' .. tostring(stp) .. '%', 208, val_col) .. ')'
-            elseif key == 'tpgain+' then
-                local qa = tbl['quadruple attack'] or 0
-                local ta = tbl['triple attack'] or 0
-                local da = tbl['double attack'] or 0
-                local stp = tbl['store tp'] or 0
-                
-                local qa_gain = qa * 3
-                local ta_gain = ta * 2
-                local da_gain = da * 1
-                local stp_mult = stp / 100
-                
-                local qa_bonus = string.format("%g", qa_gain * stp_mult)
-                local ta_bonus = string.format("%g", ta_gain * stp_mult)
-                local da_bonus = string.format("%g", da_gain * stp_mult)
-                local total_bonus = string.format("%g", (qa_gain + ta_gain + da_gain) * stp_mult)
-                
-                local qa_str = string.color('+' .. qa_gain .. '%', 204, val_col) .. string.color('[+' .. qa_bonus .. '%]', 208, val_col)
-                local ta_str = string.color('+' .. ta_gain .. '%', 206, val_col) .. string.color('[+' .. ta_bonus .. '%]', 208, val_col)
-                local da_str = string.color('+' .. da_gain .. '%', 205, val_col) .. string.color('[+' .. da_bonus .. '%]', 208, val_col)
-                local stp_str = string.color('+' .. stp .. '%', 208, val_col) .. string.color('[+' .. total_bonus .. '%]', 208, val_col)
-                
-                display_value = '+' .. display_value .. '% (' .. qa_str .. ',' .. ta_str .. ',' .. da_str .. ',' .. stp_str .. ')'
             elseif key == 'tpgainz+' then
                 local qa = tbl['quadruple attack'] or 0
                 local ta = tbl['triple attack'] or 0
                 local da = tbl['double attack'] or 0
                 local zan = tbl['zanshin'] or 0
-                
+                local zan_oat = tbl['zanshin: oat'] or 0
                 local stp = tbl['store tp'] or 0
                 
                 local qa_gain = qa * 3
@@ -488,10 +473,12 @@ function show_results(name,mjob,sjob)
                 local da_gain = da * 1
                 local stp_mult = stp / 100
                 
-                local hasso_proc = math.min((zan * 0.25) + zan_oat, 35)
-                local zan_eff = (hasso_proc * 0.95) + (math.min(zan, 100) * 0.05)
+                local zan_rate = math.min(zan, 100)
+                local hasso_rate = math.min(zan * 0.25, 35)
+                local oat_mult = 1 + (zan_oat / 100)
+                local zan_eff_pct = ((hasso_rate * 0.95) + (zan_rate * 0.05)) * oat_mult
                 local ZAN_TP_MULT = 2.22
-                local zan_gain = zan_eff * ZAN_TP_MULT
+                local zan_gain = zan_eff_pct * ZAN_TP_MULT
                 
                 local qa_bonus = string.format("%g", qa_gain * stp_mult)
                 local ta_bonus = string.format("%g", ta_gain * stp_mult)
@@ -511,7 +498,7 @@ function show_results(name,mjob,sjob)
                 local ta = tbl['triple attack'] or 0
                 local da = tbl['double attack'] or 0
                 local zan = tbl['zanshin'] or 0
-                
+                local zan_oat = tbl['zanshin: oat'] or 0
                 local stp = tbl['store tp'] or 0
                 
                 local qa_prob = math.min(qa / 100, 1.0)
@@ -525,8 +512,11 @@ function show_results(name,mjob,sjob)
                 local da_raw = da * 1
                 
                 local zan_prob = math.min(zan, 100) / 100
-                local hasso_prob = math.min((zan * 0.25) + zan_oat, 35) / 100
-                local zan_eff = (hasso_prob * 0.95) + (zan_prob * 0.05)
+                local hasso_prob = math.min(zan * 0.25, 35) / 100
+                local oat_mult = 1 + (zan_oat / 100)
+                local base_zan_procs = (hasso_prob * 0.95) + (zan_prob * 0.05)
+                local zan_eff = base_zan_procs * oat_mult
+                
                 local ZAN_TP_MULT = 2.22
                 local zan_raw = zan_eff * 100 * ZAN_TP_MULT
                 
@@ -661,12 +651,27 @@ function show_results(name,mjob,sjob)
                 output_string = output_string..' '..string.color(tostring(value),color[5],160)..'/'..string.color(tostring(stat_cap),155,160)
             end
 			
+            
             -- >>> BEGIN ZANSHIN POST-CAP APPEND <<<
             if key == 'zanshin' then
-                local raw_zan_hasso = (value * 0.25) + zan_oat
+                local zan_oat = tbl['zanshin: oat'] or 0
+                
+                -- Cap the base values so the math doesn't inflate past 100 Zanshin
+                local raw_zan_miss = math.min(value, 100) * 0.05
+                local raw_zan_hasso = math.min(value * 0.25, 35)
+                
                 output_string = output_string .. string.color(' (' .. string.format("%g", raw_zan_hasso) .. '%/35%)', val_col, 160)
+                
+                if zan_oat > 0 then
+                    -- Calculate actual expected OAT proc chance per round
+                    local oat_actual = (raw_zan_miss * (zan_oat / 100)) + (raw_zan_hasso * (zan_oat / 100))
+                    
+                    -- Display the actual chance, rounded to 2 decimal places
+                    output_string = output_string .. string.color(' [OAT: ' .. string.format("%.2f", oat_actual) .. '%]', 208, 160)
+                end
             end
             -- >>> END ZANSHIN POST-CAP APPEND <<<
+            
         
             windower.add_to_chat(160,output_string)
         end
