@@ -76,9 +76,11 @@ roles = {
     GEO = 'role:pet|indicolure effect duration|handbell skill|geomancy skill|geomancy',
     RUN = 'role:tank|inquartata|parrying skill',
     levelfilter = 99,
+	manual_enhancing_skill = 614,
 }
 settings = config.load(defaults)
 current_mode = 'default'
+local temper_ii_ta = 0
 
 tbl = {}
 
@@ -132,6 +134,7 @@ windower.register_event('incoming chunk',function(id,data)
                 end
             end
         elseif p['Type'] == 1 then
+			config.reload(settings)
             local t = windower.ffxi.get_mob_by_index(p['Target Index'])
             local mjob = res.jobs[p['Main Job']].english_short
             local sjob = res.jobs[p['Sub Job']].english_short
@@ -259,11 +262,37 @@ function show_results(name,mjob,sjob)
             tbl[stat] = (tbl[stat] or 0) + value
         end
     end
+-- Manual Temper II TA Calculation
+    local manual_enhancing = tonumber(settings.manual_enhancing_skill) or tonumber(defaults.manual_enhancing_skill) or 0
+    local temper_ta = 0
+    
+    if manual_enhancing >= 300 then
+        local player = windower.ffxi.get_player()
+        
+        -- ONLY run this if the target being checked is your own character
+        if player and player.name == name then
+            local has_temper = false
+            
+            if player.buffs then
+                for _, buff_id in ipairs(player.buffs) do
+                    if buff_id == 432 then -- 432 is the buff ID for Multi Strikes
+                        has_temper = true
+                        break
+                    end
+                end
+            end
 
-  --Combine DA, TA, and QA into a single "multi attack" stat
+            -- Only apply the math and add to the TA pool if the buff was found
+            if has_temper then
+                temper_ta = math.floor((manual_enhancing - 300) / 10)
+                tbl['triple attack'] = (tbl['triple attack'] or 0) + temper_ta
+            end
+        end
+    end
+    -- Combine DA, TA, and QA into a single "multi attack" stat
     tbl['multi attack'] = (tbl['double attack'] or 0) + (tbl['triple attack'] or 0) + (tbl['quadruple attack'] or 0)
-	-- TPGain Calculations
-    -- TPGain Calculations
+
+    -- TPGain Calculations (Variables must be pulled AFTER Temper is added)
     local qa = tbl['quadruple attack'] or 0
     local ta = tbl['triple attack'] or 0
     local da = tbl['double attack'] or 0
