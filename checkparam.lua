@@ -251,16 +251,27 @@ function show_results(name,mjob,sjob)
         end
     end
 
+    -- Apply Job Traits (Main and Sub traits do not stack; only the highest value applies)
+    local trait_bonuses = {}
+    
     if main_job_traits[mjob] then
         for stat, value in pairs(main_job_traits[mjob]) do
-            tbl[stat] = (tbl[stat] or 0) + value
+            trait_bonuses[stat] = value
         end
     end
     
     if sjob and sub_job_traits[sjob] then
         for stat, value in pairs(sub_job_traits[sjob]) do
-            tbl[stat] = (tbl[stat] or 0) + value
+            -- Only apply the subjob trait if the main job doesn't have it, or if it's higher
+            if not trait_bonuses[stat] or value > trait_bonuses[stat] then
+                trait_bonuses[stat] = value
+            end
         end
+    end
+
+    -- Add the properly filtered traits to the overall stat table
+    for stat, value in pairs(trait_bonuses) do
+        tbl[stat] = (tbl[stat] or 0) + value
     end
 -- Manual Temper II TA Calculation
     local manual_enhancing = tonumber(settings.manual_enhancing_skill) or tonumber(defaults.manual_enhancing_skill) or 0
