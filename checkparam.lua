@@ -77,6 +77,16 @@ roles = {
     RUN = 'role:tank|inquartata|parrying skill',
     levelfilter = 99,
 	manual_enhancing_skill = 614,
+	dualwieldtrait = {
+            nin = 35,
+            nin_sub = 25,
+            thf = 30,
+            thf_sub = 0,
+            dnc = 35,
+            dnc_sub = 15,
+            blu = 0,
+            blu_sub = 0,
+        },
 }
 settings = config.load(defaults)
 current_mode = 'default'
@@ -268,6 +278,31 @@ function show_results(name,mjob,sjob)
             end
         end
     end
+
+    -- >>> MANUAL DUAL WIELD OVERRIDE LOGIC <<<
+    local mjob_lower = mjob and string.lower(mjob) or ''
+    local sjob_lower = sjob and string.lower(sjob) or ''
+    
+    -- Check settings.xml for Main Job DW (Fallback to hardcoded traits if not set)
+    local main_dw = settings.dualwieldtrait and settings.dualwieldtrait[mjob_lower] and tonumber(settings.dualwieldtrait[mjob_lower])
+    if not main_dw and main_job_traits[mjob] and main_job_traits[mjob]['dual wield'] then
+        main_dw = main_job_traits[mjob]['dual wield']
+    end
+    main_dw = main_dw or 0
+    
+    -- Check settings.xml for Sub Job DW (Fallback to hardcoded traits if not set)
+    local sub_dw = settings.dualwieldtrait and settings.dualwieldtrait[sjob_lower .. '_sub'] and tonumber(settings.dualwieldtrait[sjob_lower .. '_sub'])
+    if not sub_dw and sjob and sub_job_traits[sjob] and sub_job_traits[sjob]['dual wield'] then
+        sub_dw = sub_job_traits[sjob]['dual wield']
+    end
+    sub_dw = sub_dw or 0
+
+    -- Apply the highest DW value found
+    local highest_dw = math.max(main_dw, sub_dw)
+    if highest_dw > 0 then
+        trait_bonuses['dual wield'] = highest_dw
+    end
+    -- >>> END MANUAL OVERRIDE LOGIC <<<
 
     -- Add the properly filtered traits to the overall stat table
     for stat, value in pairs(trait_bonuses) do
