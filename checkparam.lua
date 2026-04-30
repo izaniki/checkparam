@@ -43,7 +43,7 @@ defaults = {
 roles = {
 		idle='physical damage taken|magic damage taken|magic evasion|evasion|magic defense bonus|defense|refresh|regen',
         idle2='physical damage taken|magic damage taken|magic evasion|evasion|magic defense bonus|defense|refresh|regen|HP|VIT|MND|INT',
-		dd = 'physical damage taken|magic damage taken|haste|store tp|multi attack|tpgain|attack|accuracy|critical hit rate|weapon skill damage|tpgain+|tpgainpro',
+		dd = 'physical damage taken|magic damage taken|haste|store tp|multi attack|tpgain|attack|accuracy|critical hit rate|weapon skill damage|tpgain+|tpgainpro|ttw1k|ttw1.5k|ttw2k|ttw2.5k|ttw3k',
         heal = 'physical damage taken|magic damage taken|cure potency|cure potency ii|fast cast|quick cast|enmity|refresh|spell interruption rate down|conserve mp|healing magic skill|MND',
         tank = 'physical damage taken|physical damage taken ii|magic damage taken|magic damage taken ii|enmity|spell interruption rate down|HP|MP|fast cast|magic evasion|magic defense bonus|evasion|defense|phalanx',
         mage = 'physical damage taken|magic damage taken|magic attack bonus|magic burst damage|magic burst damage ii|magic accuracy|fast cast',
@@ -52,6 +52,9 @@ roles = {
 		dw = 'dw0|dw10|dw15|dw30|dwcap',
 		dws = 'dw0s|dw10s|dw15s|dw30s|dwcaps',
 		dwm= 'dw0m|dw10m|dw15m|dw30m|dwcapm',
+		ma = 'ma0|ma10|ma15|ma30|macap',
+        mas = 'ma0s|ma10s|ma15s|ma30s|macaps',
+        mam = 'ma0m|ma10m|ma15m|ma30m|macapm',
     },
     WAR = 'role:dd|double attack|triple attack|quadruple attack',
     MNK = 'role:dd|martial arts|total subtle blow',
@@ -195,6 +198,13 @@ function get_text(id,data,slot) -- Add slot here
             end
         end
     end
+	if res.items[id] and res.items[id].delay then
+        if slot == 'main' then
+            tbl['main_delay'] = res.items[id].delay
+        elseif slot == 'sub' then
+            tbl['sub_delay'] = res.items[id].delay
+        end
+    end
     tbl.sets = tbl.sets or {}
     table.insert(tbl.sets,id)
 end
@@ -204,6 +214,7 @@ function split_text(id,text,arg,slot)
         local key = windower.regex.replace(string.lower(key),'(\\"|\\.|\\s$)','')
 		        local key = integrate[key] or key
         local key = arg and arg..key or key
+		
         if key == "blood pact damage" then
             key = "pet: blood pact damage"
         elseif key == "pet: damage taken" then
@@ -395,6 +406,7 @@ function show_results(name,mjob,sjob)
     
     tbl['tpgainzpro'] = stp + (base_z_pro_gain * (1 + (stp / 100)))
     tbl['tpgainzpro'] = tonumber(string.format("%.2f", tbl['tpgainzpro']))
+	
 
     -- Clone total dual wield into specific haste tier buckets
     local dw_total = tbl['dual wield'] or 0
@@ -416,6 +428,115 @@ function show_results(name,mjob,sjob)
     tbl['dw30m'] = dw_total
 	tbl['dwcapm'] = dw_total
 
+-- Dynamic TP Per Hit & Time To WS Calculations
+    local main_dly = tbl['main_delay'] or 0
+    local sub_dly = tbl['sub_delay'] or 0
+    local total_dw = tbl['dual wield'] or 0
+    local stp = tbl['store tp'] or 0
+    local ma = tbl['martial arts'] or 0
+
+   if main_dly > 0 or sub_dly > 0 or ma > 0 or mjob == 'MNK' or mjob == 'PUP' then
+        local calc_delay = 0 -- The delay used for the FFXI TP formula
+        local round_delay = 0 -- The real delay used for the attack speed formula
+        local base_hits = 1
+        
+        if sub_dly > 0 then
+            -- Dual Wielding
+            local base_combo_dly = main_dly + sub_dly
+            round_delay = base_combo_dly * (1 - (total_dw / 100))
+            calc_delay = round_delay / 2
+            base_hits = 2
+        elseif ma > 0 or mjob == 'MNK' or mjob == 'PUP' then
+            -- Hand-to-Hand (Base 480 + Weapon Delay - Martial Arts)
+            local base_combo_dly = 480 + main_dly
+            round_delay = base_combo_dly - ma
+            calc_delay = round_delay / 2
+            base_hits = 2
+            
+            -- Dynamic MA Needed Calculations (Using Actual Gear Haste)
+            -- Reads real gear haste, capped at 25.6%
+            local actual_gear_haste = math.min((tbl['haste'] or 0) / 100, 0.256) 
+            
+            -- Helper function to calculate MA needed for specific buff tiers
+            local function get_ma_needed(magic_haste, ja_haste)
+                local total_haste = math.min(actual_gear_haste + magic_haste + ja_haste, 0.80)
+                local haste_multiplier = 1 - total_haste
+                local needed = 0
+                
+                if haste_multiplier > 0.20 then
+                    local target_ma_total = base_combo_dly * (1 - (0.20 / haste_multiplier))
+                    needed = target_ma_total - ma
+                else
+                    needed = 0 - ma -- Haste alone caps delay; any MA is overcap
+                end
+                
+                return tonumber(string.format("%.2f", needed))
+            end
+
+            -- No Samba Tiers
+            tbl['ma0']   = get_ma_needed(0.00, 0.00)
+            tbl['ma10']  = get_ma_needed(0.10, 0.00)
+            tbl['ma15']  = get_ma_needed(0.15, 0.00)
+            tbl['ma30']  = get_ma_needed(0.30, 0.00)
+            tbl['macap'] = get_ma_needed(0.4375, 0.00)
+
+            -- Sub Samba Tiers (5% JA Haste)
+            tbl['ma0s']   = get_ma_needed(0.00, 0.05)
+            tbl['ma10s']  = get_ma_needed(0.10, 0.05)
+            tbl['ma15s']  = get_ma_needed(0.15, 0.05)
+            tbl['ma30s']  = get_ma_needed(0.30, 0.05)
+            tbl['macaps'] = get_ma_needed(0.4375, 0.05)
+
+            -- Main Samba Tiers (10% JA Haste)
+            tbl['ma0m']   = get_ma_needed(0.00, 0.10)
+            tbl['ma10m']  = get_ma_needed(0.10, 0.10)
+            tbl['ma15m']  = get_ma_needed(0.15, 0.10)
+            tbl['ma30m']  = get_ma_needed(0.30, 0.10)
+            tbl['macapm'] = get_ma_needed(0.4375, 0.10)
+        else
+            -- Single Wield / 2-Handed
+            round_delay = main_dly
+            calc_delay = main_dly
+            base_hits = 1
+        end
+        
+        -- 1. Calculate Actual TP Per Hit
+        local base_tp = 0
+        if calc_delay <= 180 then
+            base_tp = 61 + ((calc_delay - 180) * 15 / 180)
+        elseif calc_delay <= 540 then
+            base_tp = 61 + ((calc_delay - 180) * 40 / 360)
+        else
+            base_tp = 101 + ((calc_delay - 540) * 20 / 360)
+        end
+        
+        -- Floor the base TP, then apply STP and floor again
+        base_tp = math.floor(base_tp)
+        local tp_per_hit = math.floor(base_tp * (1 + (stp / 100)))
+        tbl['actual tp per hit'] = tp_per_hit
+        
+        -- 2. Calculate Time to WS (TTW)
+        if tp_per_hit > 0 then
+            local gear_haste = 0.256 -- 25.6% Cap
+            local magic_haste = 0.4375 -- 43.75% Cap
+            local ja_haste = math.min(0.25, 0.10 + ((tbl['hasso'] or 0) / 100)) -- 10% Base + Hasso Gear
+            local total_haste = math.min(0.80, gear_haste + magic_haste + ja_haste) -- 80% Hard Cap
+            
+            -- Apply haste to the round delay to get real seconds
+            local hasted_delay = round_delay * (1 - total_haste)
+            local round_time_sec = hasted_delay / 60
+            
+            local expected_tp_per_round = tp_per_hit * (base_hits + (ear_z_ladder or 0))
+            
+            if expected_tp_per_round > 0 then
+                tbl['ttw1k'] = tonumber(string.format("%.2f", (1000 / expected_tp_per_round) * round_time_sec))
+                tbl['ttw1.5k'] = tonumber(string.format("%.2f", (1500 / expected_tp_per_round) * round_time_sec))
+                tbl['ttw2k'] = tonumber(string.format("%.2f", (2000 / expected_tp_per_round) * round_time_sec))
+                tbl['ttw2.5k'] = tonumber(string.format("%.2f", (2500 / expected_tp_per_round) * round_time_sec))
+                tbl['ttw3k'] = tonumber(string.format("%.2f", (3000 / expected_tp_per_round) * round_time_sec))
+            end
+        end
+    end
 -- Subtle Blow Calculations
     local sb_base = tbl['subtle blow'] or 0
     local sb_ii = tbl['subtle blow ii'] or 0
@@ -444,11 +565,6 @@ function show_results(name,mjob,sjob)
         end
     end
     
-    -- Override stats and header if a custom role mode is active
-    if current_mode ~= 'default' and settings.roles[current_mode] then
-        stats = settings.roles[current_mode]
-        head = '<'..current_mode:upper()..' Mode>'
-    end
 	coroutine.sleep(0.1)
     windower.add_to_chat(160,string.color(name,1,160)..': '..string.color(head,160,160))
     local printed_stats = {} -- Table to track what we have already output
@@ -473,7 +589,7 @@ function show_results(name,mjob,sjob)
             -- >>> BEGIN CUSTOM COLOR LOGIC <<<
             local key_col = color[1]
             local val_col = color[2]
-            local display_value = tostring(value)
+            local display_value = value and tostring(value) or "0"
 
             if key == 'quadruple attack' then
                 val_col = 204
@@ -639,7 +755,11 @@ function show_results(name,mjob,sjob)
                                 string.color('[+' .. fmt(total_bonus) .. '%]', 208, val_col)
                 
                 display_value = '+' .. display_value .. '%\n (' .. qa_str ..','..ta_str..','..da_str ..',\n     '.. zan_str ..',' .. stp_str ..')'
-            elseif key == 'tpgainpro' then
+            
+			elseif key:match('^ttw') then
+                val_col = 205
+                display_value = display_value .. 's'
+			elseif key == 'tpgainpro' then
                 local qa = tbl['quadruple attack'] or 0
                 local ta = tbl['triple attack'] or 0
                 local da = tbl['double attack'] or 0
@@ -732,8 +852,9 @@ function show_results(name,mjob,sjob)
                 local zan_oat = tbl['zanshin: oat'] or 0
                 
                 -- Cap the base values so the math doesn't inflate past 100 Zanshin
-                local raw_zan_miss = math.min(value, 100) * 0.05
-                local raw_zan_hasso = math.min(value * 0.25, 35)
+                local safe_value = value or 0
+				local raw_zan_miss = math.min(safe_value, 100) * 0.05
+				local raw_zan_hasso = math.min(safe_value * 0.25, 35)
                 
                 output_string = output_string .. string.color(' (' .. string.format("%g", raw_zan_hasso) .. '%/35%)', val_col, 160)
                 
@@ -1047,7 +1168,7 @@ combination={
 }
 main_job_traits = {
     ['WAR'] = {['double attack']=33},
-    ['MNK'] = {},
+    ['MNK'] = {['martial arts']=210},
     ['WHM'] = {['magic defense bonus']=20},
     ['BLM'] = {['magic attack bonus']=40},
     ['RDM'] = {['magic attack bonus']=28,['fast cast'] = 38},
@@ -1063,7 +1184,7 @@ main_job_traits = {
     ['SMN'] = {},
     ['BLU'] = {},
     ['COR'] = {},
-    ['PUP'] = {},
+    ['PUP'] = {['martial arts']=205},
     ['DNC'] = {['dual wield']=35},
     ['SCH'] = {},
     ['GEO'] = {},
@@ -1072,7 +1193,7 @@ main_job_traits = {
 
 sub_job_traits = {
     ['WAR'] = {['double attack']=12},
-    ['MNK'] = {},
+    ['MNK'] = {['martial arts']=140},
     ['WHM'] = {},
     ['BLM'] = {},
     ['RDM'] = {['fast cast'] = 20},
@@ -1088,7 +1209,7 @@ sub_job_traits = {
     ['SMN'] = {},
     ['BLU'] = {},
     ['COR'] = {},
-    ['PUP'] = {},
+    ['PUP'] = {['martial arts']=100},
     ['DNC'] = {['dual wield']=15},
     ['SCH'] = {},
     ['GEO'] = {},
@@ -1160,6 +1281,27 @@ abbreviations = {
 	['tpgainz'] = 'TPGainZ',
     ['tpgainz+'] = 'TPGainZ+',
     ['tpgainzpro'] = 'TPGainZPro',
+	['actual tp per hit'] = 'TP/Hit (DW)',
+	['ttw1k'] = 'TTW 1000',
+    ['ttw1.5k'] = 'TTW 1500',
+    ['ttw2k'] = 'TTW 2000',
+    ['ttw2.5k'] = 'TTW 2500',
+    ['ttw3k'] = 'TTW 3000',
+	['ma0'] = 'MA (0%)',
+    ['ma10'] = 'MA (10%)',
+    ['ma15'] = 'MA (15%)',
+    ['ma30'] = 'MA (30%)',
+    ['macap']='MA (Cap)',
+    ['ma0s'] = 'MA (0% sub samba)',
+    ['ma10s'] = 'MA (10% sub samba)',
+    ['ma15s'] = 'MA (15% sub samba)',
+    ['ma30s'] = 'MA (30% sub samba)',
+    ['macaps']='MA (cap sub samba)',
+    ['ma0m'] = 'MA (0% main samba)',
+    ['ma10m'] = 'MA (10% main samba)',
+    ['ma15m'] = 'MA (15% main samba)',
+    ['ma30m'] = 'MA (30% main samba)',
+    ['macapm']='MA (cap main samba)',
     -- You can add as many as you want here!
 }
 caps={
@@ -1186,21 +1328,21 @@ caps={
 	['zanshin']=100,
 	['hasso']=25,
 	['snapshot']=70,
-	['dw0'] = 64,
-    ['dw10'] = 60,
-    ['dw15'] = 57,
-    ['dw30'] = 46,
-	['dwcap']=26,
-    ['dw0s'] = 62,
-    ['dw10s'] = 57,
-    ['dw15s'] = 54,
-    ['dw30s'] = 40,
-	['dwcaps']=14,
-    ['dw0m'] = 60,
-    ['dw10m'] = 54,
-    ['dw15m'] = 50,
-    ['dw30m'] = 33,
-	['dwcapm']=0,
+	['dw0'] = 74,
+    ['dw10'] = 70,
+    ['dw15'] = 67,
+    ['dw30'] = 56,
+    ['dwcap'] = 36,
+    ['dw0s'] = 72,
+    ['dw10s'] = 67,
+    ['dw15s'] = 64,
+    ['dw30s'] = 50,
+    ['dwcaps'] = 24,
+    ['dw0m'] = 70,
+    ['dw10m'] = 64,
+    ['dw15m'] = 60,
+    ['dw30m'] = 43,
+    ['dwcapm'] = 6,
 	['subtle blow']=50,
     ['subtle blow ii']=50,
     ['total subtle blow']=75,
