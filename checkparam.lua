@@ -440,12 +440,47 @@ function show_results(name,mjob,sjob)
         local round_delay = 0 -- The real delay used for the attack speed formula
         local base_hits = 1
         
-        if sub_dly > 0 then
+       if sub_dly > 0 then
             -- Dual Wielding
             local base_combo_dly = main_dly + sub_dly
             round_delay = base_combo_dly * (1 - (total_dw / 100))
             calc_delay = round_delay / 2
             base_hits = 2
+
+            -- Calculate TP Penalty for Overcapping DW
+            local function get_tp_loss(target_dw)
+                if total_dw <= target_dw then return 0 end
+                
+                local function calc_tp(dw_val)
+                    local dly = (base_combo_dly * (1 - (dw_val / 100))) / 2
+                    local tp = 0
+                    if dly <= 180 then tp = 61 + ((dly - 180) * 15 / 180)
+                    elseif dly <= 540 then tp = 61 + ((dly - 180) * 40 / 360)
+                    else tp = 101 + ((dly - 540) * 20 / 360) end
+                    return math.floor(math.floor(tp) * (1 + (stp / 100)))
+                end
+                
+                return calc_tp(total_dw) - calc_tp(target_dw)
+            end
+
+            -- Store the penalty for each specific tier based on your caps table
+            tbl['dw0_pen'] = get_tp_loss(74)
+            tbl['dw10_pen'] = get_tp_loss(70)
+            tbl['dw15_pen'] = get_tp_loss(67)
+            tbl['dw30_pen'] = get_tp_loss(56)
+            tbl['dwcap_pen'] = get_tp_loss(36)
+            
+            tbl['dw0s_pen'] = get_tp_loss(72)
+            tbl['dw10s_pen'] = get_tp_loss(67)
+            tbl['dw15s_pen'] = get_tp_loss(64)
+            tbl['dw30s_pen'] = get_tp_loss(50)
+            tbl['dwcaps_pen'] = get_tp_loss(24)
+            
+            tbl['dw0m_pen'] = get_tp_loss(70)
+            tbl['dw10m_pen'] = get_tp_loss(64)
+            tbl['dw15m_pen'] = get_tp_loss(60)
+            tbl['dw30m_pen'] = get_tp_loss(43)
+            tbl['dwcapm_pen'] = get_tp_loss(6)
         elseif ma > 0 or mjob == 'MNK' or mjob == 'PUP' then
             -- Hand-to-Hand (Base 480 + Weapon Delay - Martial Arts)
             local base_combo_dly = 480 + main_dly
@@ -847,7 +882,7 @@ function show_results(name,mjob,sjob)
             end
 			
             
-            -- >>> BEGIN ZANSHIN POST-CAP APPEND <<<
+            -- BEGIN ZANSHIN POST-CAP APPEND 
             if key == 'zanshin' then
                 local zan_oat = tbl['zanshin: oat'] or 0
                 
@@ -866,7 +901,10 @@ function show_results(name,mjob,sjob)
                     output_string = output_string .. string.color(' [OAT: ' .. string.format("%.2f", oat_actual) .. '%]', 208, 160)
                 end
             end
-            -- >>> END ZANSHIN POST-CAP APPEND <<<
+            -- Begin DW Penalty Apped
+			if key:match('^dw') and tbl[key .. '_pen'] and tbl[key .. '_pen'] < 0 then
+                output_string = output_string .. string.color(' (' .. tbl[key .. '_pen'] .. ' TP/Hit)', 167, 160)
+            end
             
         
             windower.add_to_chat(160,output_string)
