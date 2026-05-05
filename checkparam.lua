@@ -27,7 +27,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.]]
 
 _addon.name = 'Checkparam'
 _addon.author = 'from20020516 & Kigen. Forked by Persona'
-_addon.version = '1.3.1'
+_addon.version = '1.3.3'
 _addon.commands = {'chp','checkparam'}
 
 require('logger')
@@ -36,8 +36,6 @@ extdata = require('extdata')
 config = require('config')
 packets = require('packets')
 require('math')
-
---Edit these roles if you wish to change what the defaults for them are. If you want to add a role's stats to the beginning of a job, you can use, "role:XYZ". For example, "role:dd" will put all of the stats listed under the "dd" role and then the rest that are listed under the job.
 
 defaults = {
 roles = {
@@ -101,7 +99,6 @@ windower.register_event('addon command',function(...)
 	config.reload(settings)   
    local args = {...}
     
-    -- Handle mode switching if an argument is provided
     if args[1] then
         local cmd = string.lower(args[1])
         if cmd == 'default' or cmd == 'reset' then
@@ -117,7 +114,6 @@ windower.register_event('addon command',function(...)
             return
         end
     end
-
 
     local items = windower.ffxi.get_items
     for i=0,#res.slots do
@@ -141,7 +137,6 @@ windower.register_event('incoming chunk',function(id,data)
                 get_text(p['Item'],p['ExtData'])
             else
                 for i=1,count do
-                    -- Identify the slot name based on the packet index
                     local ext_slot = res.slots[i-1] and windower.regex.replace(string.lower(res.slots[i-1].english),' ','_') or nil
                     get_text(p['Item '..i],p['ExtData '..i], ext_slot)
                 end
@@ -163,16 +158,16 @@ windower.register_event('incoming chunk',function(id,data)
     end
 end)
 
-function get_text(id,data,slot) -- Add slot here
+function get_text(id,data,slot)
     local descriptions = res.item_descriptions[id]
     local helptext = descriptions and descriptions.english or '' 
     local stats = windower.regex.split(helptext,'(Pet|Avatar|Automaton|Wyvern|Luopan): ')
     for i,v in ipairs(windower.regex.split(stats[1],'\n')) do
-        split_text(id,v,nil,slot) -- Add slot here
+        split_text(id,v,nil,slot) 
     end
     if stats[2] then
         stats[2] = stats[2]:trim()
-        split_text(id,stats[2],'pet: ',slot) -- Add slot here
+        split_text(id,stats[2],'pet: ',slot) 
     end
     local ext = extdata.decode({id=id,extdata=data})
     if ext.augments then
@@ -180,27 +175,29 @@ function get_text(id,data,slot) -- Add slot here
             local stats = windower.regex.split(v,'(Pet|Avatar|Automaton|Wyvern|Luopan): ')
             if stats[2] then
                 stats[2] = stats[2]:trim()
-                split_text(id,stats[2],'pet: ',slot) -- Add slot here
+                split_text(id,stats[2],'pet: ',slot) 
             else
-                split_text(id,v,nil,slot) -- Add slot here
+                split_text(id,v,nil,slot) 
             end
         end
     end
   if enhanced[id] then
-        -- Split by pipe to handle multiple stats for one item ID
         for _, entry in ipairs(enhanced[id]:split('|')) do
             local stats = entry:gsub('([+-:][0-9]+)',',%1'):split(',')
             if stats[1] and stats[2] then
                 tbl[stats[1]] = tonumber(stats[2]) + (tbl[stats[1]] or 0)
-                if settings.debugmode then
-                    log(id,res.items[id].english,stats[1],stats[2],tbl[stats[1]])
-                end
             end
         end
     end
 	if res.items[id] and res.items[id].delay then
         if slot == 'main' then
             tbl['main_delay'] = res.items[id].delay
+            local skill = res.items[id].skill
+            if skill == 4 or skill == 6 or skill == 7 or skill == 8 or skill == 10 or skill == 12 then
+                tbl['is_2h'] = true
+            else
+                tbl['is_2h'] = false
+            end
         elseif slot == 'sub' then
             tbl['sub_delay'] = res.items[id].delay
         end
@@ -212,7 +209,7 @@ end
 function split_text(id,text,arg,slot)
     for key,value in string.gmatch(text,'/?([%D]-):?([%+%-]?[0-9]+)%%?%s?') do
         local key = windower.regex.replace(string.lower(key),'(\\"|\\.|\\s$)','')
-		        local key = integrate[key] or key
+		local key = integrate[key] or key
         local key = arg and arg..key or key
 		
         if key == "blood pact damage" then
@@ -226,7 +223,6 @@ function split_text(id,text,arg,slot)
             tbl['physical damage taken'] = tonumber(value)+(tbl['physical damage taken'] or 0)
             tbl['magic damage taken'] = tonumber(value)+(tbl['magic damage taken'] or 0)
             tbl['breath damage taken'] = tonumber(value)+(tbl['breath damage taken'] or 0)
-			-- Distribute "Magic skills" and "All magic skills" into individual pools
         elseif key == "magic skills" or key == "all magic skills" then
             tbl['healing magic skill'] = tonumber(value)+(tbl['healing magic skill'] or 0)
             tbl['enhancing magic skill'] = tonumber(value)+(tbl['enhancing magic skill'] or 0)
@@ -242,17 +238,12 @@ function split_text(id,text,arg,slot)
             tbl['singing skill'] = tonumber(value)+(tbl['singing skill'] or 0)
             tbl['string skill'] = tonumber(value)+(tbl['string skill'] or 0)
             tbl['wind skill'] = tonumber(value)+(tbl['wind skill'] or 0)
-			-- Magic Accuracy Skill logic (Main hand or Ranged only)
         elseif key == "magic accuracy skill" then
             if slot == "main" or slot == "range" then
                 tbl['magic accuracy'] = tonumber(value)+(tbl['magic accuracy'] or 0)
             end
-            
         else
             tbl[key] = tonumber(value)+(tbl[key] or 0)
-        end
-        if settings.debugmode then
-            log(id,res.items[id].english,key,value,tbl[key])
         end
     end
 end
@@ -272,134 +263,129 @@ function show_results(name,mjob,sjob)
         end
     end
 
-    -- Apply Job Traits (Main and Sub traits do not stack; only the highest value applies)
     local trait_bonuses = {}
-    
     if main_job_traits[mjob] then
         for stat, value in pairs(main_job_traits[mjob]) do
             trait_bonuses[stat] = value
         end
     end
-    
     if sjob and sub_job_traits[sjob] then
         for stat, value in pairs(sub_job_traits[sjob]) do
-            -- Only apply the subjob trait if the main job doesn't have it, or if it's higher
             if not trait_bonuses[stat] or value > trait_bonuses[stat] then
                 trait_bonuses[stat] = value
             end
         end
     end
 
-    -- >>> MANUAL DUAL WIELD OVERRIDE LOGIC <<<
     local mjob_lower = mjob and string.lower(mjob) or ''
     local sjob_lower = sjob and string.lower(sjob) or ''
     
-    -- Check settings.xml for Main Job DW (Fallback to hardcoded traits if not set)
     local main_dw = settings.dualwieldtrait and settings.dualwieldtrait[mjob_lower] and tonumber(settings.dualwieldtrait[mjob_lower])
     if not main_dw and main_job_traits[mjob] and main_job_traits[mjob]['dual wield'] then
         main_dw = main_job_traits[mjob]['dual wield']
     end
     main_dw = main_dw or 0
     
-    -- Check settings.xml for Sub Job DW (Fallback to hardcoded traits if not set)
     local sub_dw = settings.dualwieldtrait and settings.dualwieldtrait[sjob_lower .. '_sub'] and tonumber(settings.dualwieldtrait[sjob_lower .. '_sub'])
     if not sub_dw and sjob and sub_job_traits[sjob] and sub_job_traits[sjob]['dual wield'] then
         sub_dw = sub_job_traits[sjob]['dual wield']
     end
     sub_dw = sub_dw or 0
 
-    -- Apply the highest DW value found
     local highest_dw = math.max(main_dw, sub_dw)
-    if highest_dw > 0 then
-        trait_bonuses['dual wield'] = highest_dw
-    end
-    -- >>> END MANUAL OVERRIDE LOGIC <<<
+    if highest_dw > 0 then trait_bonuses['dual wield'] = highest_dw end
 
-    -- Add the properly filtered traits to the overall stat table
     for stat, value in pairs(trait_bonuses) do
         tbl[stat] = (tbl[stat] or 0) + value
     end
--- Manual Temper II TA Calculation
+
     local manual_enhancing = tonumber(settings.manual_enhancing_skill) or tonumber(defaults.manual_enhancing_skill) or 0
     local temper_ta = 0
-    
     if manual_enhancing >= 300 then
         local player = windower.ffxi.get_player()
-        
-        -- ONLY run this if the target being checked is your own character
         if player and player.name == name then
             local has_temper = false
-            
             if player.buffs then
                 for _, buff_id in ipairs(player.buffs) do
-                    if buff_id == 432 then -- 432 is the buff ID for Multi Strikes
-                        has_temper = true
-                        break
-                    end
+                    if buff_id == 432 then has_temper = true; break end
                 end
             end
-
-            -- Only apply the math and add to the TA pool if the buff was found
             if has_temper then
                 temper_ta = math.floor((manual_enhancing - 300) / 10)
                 tbl['triple attack'] = (tbl['triple attack'] or 0) + temper_ta
             end
         end
     end
-    -- Combine DA, TA, and QA into a single "multi attack" stat
+
     tbl['multi attack'] = (tbl['double attack'] or 0) + (tbl['triple attack'] or 0) + (tbl['quadruple attack'] or 0)
 
-    -- TPGain Calculations (Variables must be pulled AFTER Temper is added)
+    local main_dly = tbl['main_delay'] or 0
+    local sub_dly = tbl['sub_delay'] or 0
+    local total_dw = tbl['dual wield'] or 0
+    local ma = tbl['martial arts'] or 0
+    local is_2h = tbl['is_2h'] or false
+
+    local weap_type = '1h'
+    if sub_dly > 0 then weap_type = 'dw'
+    elseif ma > 0 or mjob == 'MNK' or mjob == 'PUP' then weap_type = 'h2h'
+    elseif is_2h then weap_type = '2h' end
+
+    local hit_rate = (weap_type == '2h') and 0.95 or 0.99
+    local miss_rate = 1.0 - hit_rate
+
+    tbl['weap_type'] = weap_type
+    tbl['hit_rate'] = hit_rate
+
     local qa = tbl['quadruple attack'] or 0
     local ta = tbl['triple attack'] or 0
     local da = tbl['double attack'] or 0
     local stp = tbl['store tp'] or 0
-    local zan = tbl['zanshin'] or 0
     
-   local zan_oat = tbl['zanshin: oat'] or 0
+    local zan = tbl['zanshin'] or 0
+    local zan_oat = tbl['zanshin: oat'] or 0
+    local zan_rate = math.min(zan, 100)
+    local hasso_rate = math.min(zan * 0.25, 35)
 
-    -- Calculate base multi-hit gain (QA=3%, TA=2%, DA=1%)
-    local base_multi_gain = (qa * 3) + (ta * 2) + (da * 1)
+    if weap_type == 'dw' or weap_type == 'h2h' then
+        zan_rate = 0
+        hasso_rate = 0
+        zan_oat = 0
+    elseif weap_type == '1h' then
+        hasso_rate = 0
+    end
+
+    local zan_prob = zan_rate / 100
+    local hasso_prob = hasso_rate / 100
+    local oat_mult = 1 + (zan_oat / 100)
+
+    local base_multi_gain = (qa * 3 * hit_rate) + (ta * 2 * hit_rate) + (da * 1 * hit_rate)
     
     tbl['tpgain'] = base_multi_gain + stp
     tbl['tpgain+'] = stp + (base_multi_gain * (1 + (stp / 100)))
 
-    -- Zanshin TPGain Calculations (Raw/Additive)
     local ZAN_TP_MULT = 2.22 
-    local zan_rate = math.min(zan, 100)
-    local hasso_rate = math.min(zan * 0.25, 35)
-    local oat_mult = 1 + (zan_oat / 100)
-    
-    -- Zanshin effective proc rate % (95% hit chance * Hasso rate) + (5% miss chance * Miss rate) * OAT multiplier
-    local zan_eff_pct = ((hasso_rate * 0.95) + (zan_rate * 0.05)) * oat_mult
-    local zan_base_gain = zan_eff_pct * ZAN_TP_MULT
+    local zan_eff_pct = ((hasso_prob * hit_rate) + (zan_prob * miss_rate)) * oat_mult
+    local zan_base_gain = zan_eff_pct * ZAN_TP_MULT * 100
 
     tbl['tpgainz'] = tonumber(string.format("%.2f", base_multi_gain + zan_base_gain + stp))
     tbl['tpgainz+'] = tonumber(string.format("%.2f", stp + ((base_multi_gain + zan_base_gain) * (1 + (stp / 100)))))
 	
-    -- Convert stats to probabilities (decimals)
     local qa_prob = math.min(qa / 100, 1.0)
     local ta_prob = math.min(ta / 100, 1.0)
     local da_prob = math.min(da / 100, 1.0)
-    local zan_prob = zan_rate / 100
-    local hasso_prob = hasso_rate / 100
-    local oax_prob = 0
-    local e_oa = 0
 
-    -- EAR_ladder (Multi-Attack & OAX Only - Zanshin removed)
-    local ear_ladder = (qa_prob * 3) + 
-                       ((1 - qa_prob) * ta_prob * 2) + 
-                       ((1 - qa_prob) * (1 - ta_prob) * da_prob * 1) + 
-                       ((1 - qa_prob) * (1 - ta_prob) * (1 - da_prob) * (oax_prob * e_oa))
+    local qa_raw = qa_prob * 3 * hit_rate
+    local ta_raw = ta_prob * 2 * hit_rate
+    local da_raw = da_prob * 1 * hit_rate
 
+    local ear_ladder = qa_raw + ((1 - qa_prob) * ta_raw) + ((1 - qa_prob) * (1 - ta_prob) * da_raw)
     local base_pro_gain = ear_ladder * 100
+    
     tbl['tpgainpro'] = stp + (base_pro_gain * (1 + (stp / 100)))
     tbl['tpgainpro'] = tonumber(string.format("%.2f", tbl['tpgainpro']))
 
-    -- TPGainZPro (Cannibalization Logic)
     local p_no_ma = (1 - qa_prob) * (1 - ta_prob) * (1 - da_prob)
-    local base_zan_procs = (hasso_prob * 0.95) + (zan_prob * 0.05)
-    local zan_pro_proc = p_no_ma * (base_zan_procs * oat_mult)
+    local zan_pro_proc = p_no_ma * zan_eff_pct
     
     local ear_z_ladder = ear_ladder + (zan_pro_proc * ZAN_TP_MULT)
     local base_z_pro_gain = ear_z_ladder * 100
@@ -407,50 +393,27 @@ function show_results(name,mjob,sjob)
     tbl['tpgainzpro'] = stp + (base_z_pro_gain * (1 + (stp / 100)))
     tbl['tpgainzpro'] = tonumber(string.format("%.2f", tbl['tpgainzpro']))
 	
-
-    -- Clone total dual wield into specific haste tier buckets
     local dw_total = tbl['dual wield'] or 0
-    tbl['dw0'] = dw_total
-    tbl['dw10'] = dw_total
-    tbl['dw15'] = dw_total
-    tbl['dw30'] = dw_total
-	tbl['dwcap'] = dw_total
-    
-    tbl['dw0s'] = dw_total
-    tbl['dw10s'] = dw_total
-    tbl['dw15s'] = dw_total
-    tbl['dw30s'] = dw_total
-    tbl['dwcaps'] = dw_total
-	
-    tbl['dw0m'] = dw_total
-    tbl['dw10m'] = dw_total
-    tbl['dw15m'] = dw_total
-    tbl['dw30m'] = dw_total
-	tbl['dwcapm'] = dw_total
+    tbl['dw0'] = dw_total; tbl['dw10'] = dw_total; tbl['dw15'] = dw_total; tbl['dw30'] = dw_total; tbl['dwcap'] = dw_total
+    tbl['dw0s'] = dw_total; tbl['dw10s'] = dw_total; tbl['dw15s'] = dw_total; tbl['dw30s'] = dw_total; tbl['dwcaps'] = dw_total
+    tbl['dw0m'] = dw_total; tbl['dw10m'] = dw_total; tbl['dw15m'] = dw_total; tbl['dw30m'] = dw_total; tbl['dwcapm'] = dw_total
 
--- Dynamic TP Per Hit & Time To WS Calculations
-    local main_dly = tbl['main_delay'] or 0
-    local sub_dly = tbl['sub_delay'] or 0
-    local total_dw = tbl['dual wield'] or 0
-    local stp = tbl['store tp'] or 0
-    local ma = tbl['martial arts'] or 0
-
+    -- TTW Calculations
    if main_dly > 0 or sub_dly > 0 or ma > 0 or mjob == 'MNK' or mjob == 'PUP' then
-        local calc_delay = 0 -- The delay used for the FFXI TP formula
-        local round_delay = 0 -- The real delay used for the attack speed formula
+        local calc_delay = 0 
+        local round_delay = 0 
         local base_hits = 1
+        local original_base_delay = main_dly
         
        if sub_dly > 0 then
-            -- Dual Wielding
             local base_combo_dly = main_dly + sub_dly
+            original_base_delay = base_combo_dly
             round_delay = base_combo_dly * (1 - (total_dw / 100))
             calc_delay = round_delay / 2
             base_hits = 2
 
-            -- Calculate TP Penalty for Overcapping DW
             local function get_tp_loss(target_dw)
                 if total_dw <= target_dw then return 0 end
-                
                 local function calc_tp(dw_val)
                     local dly = (base_combo_dly * (1 - (dw_val / 100))) / 2
                     local tp = 0
@@ -459,109 +422,66 @@ function show_results(name,mjob,sjob)
                     else tp = 101 + ((dly - 540) * 20 / 360) end
                     return math.floor(math.floor(tp) * (1 + (stp / 100)))
                 end
-                
                 return calc_tp(total_dw) - calc_tp(target_dw)
             end
 
-            -- Store the penalty for each specific tier based on your caps table
-            tbl['dw0_pen'] = get_tp_loss(74)
-            tbl['dw10_pen'] = get_tp_loss(70)
-            tbl['dw15_pen'] = get_tp_loss(67)
-            tbl['dw30_pen'] = get_tp_loss(56)
-            tbl['dwcap_pen'] = get_tp_loss(36)
-            
-            tbl['dw0s_pen'] = get_tp_loss(72)
-            tbl['dw10s_pen'] = get_tp_loss(67)
-            tbl['dw15s_pen'] = get_tp_loss(64)
-            tbl['dw30s_pen'] = get_tp_loss(50)
-            tbl['dwcaps_pen'] = get_tp_loss(24)
-            
-            tbl['dw0m_pen'] = get_tp_loss(70)
-            tbl['dw10m_pen'] = get_tp_loss(64)
-            tbl['dw15m_pen'] = get_tp_loss(60)
-            tbl['dw30m_pen'] = get_tp_loss(43)
-            tbl['dwcapm_pen'] = get_tp_loss(6)
+            tbl['dw0_pen'] = get_tp_loss(74); tbl['dw10_pen'] = get_tp_loss(70); tbl['dw15_pen'] = get_tp_loss(67); tbl['dw30_pen'] = get_tp_loss(56); tbl['dwcap_pen'] = get_tp_loss(36)
+            tbl['dw0s_pen'] = get_tp_loss(72); tbl['dw10s_pen'] = get_tp_loss(67); tbl['dw15s_pen'] = get_tp_loss(64); tbl['dw30s_pen'] = get_tp_loss(50); tbl['dwcaps_pen'] = get_tp_loss(24)
+            tbl['dw0m_pen'] = get_tp_loss(70); tbl['dw10m_pen'] = get_tp_loss(64); tbl['dw15m_pen'] = get_tp_loss(60); tbl['dw30m_pen'] = get_tp_loss(43); tbl['dwcapm_pen'] = get_tp_loss(6)
         elseif ma > 0 or mjob == 'MNK' or mjob == 'PUP' then
-            -- Hand-to-Hand (Base 480 + Weapon Delay - Martial Arts)
             local base_combo_dly = 480 + main_dly
+            original_base_delay = base_combo_dly
             round_delay = base_combo_dly - ma
             calc_delay = round_delay / 2
             base_hits = 2
             
-            -- Dynamic MA Needed Calculations (Using Actual Gear Haste)
-            -- Reads real gear haste, capped at 25.6%
             local actual_gear_haste = math.min((tbl['haste'] or 0) / 100, 0.256) 
-            
-            -- Helper function to calculate MA needed for specific buff tiers
             local function get_ma_needed(magic_haste, ja_haste)
                 local total_haste = math.min(actual_gear_haste + magic_haste + ja_haste, 0.80)
                 local haste_multiplier = 1 - total_haste
                 local needed = 0
-                
                 if haste_multiplier > 0.20 then
                     local target_ma_total = base_combo_dly * (1 - (0.20 / haste_multiplier))
                     needed = target_ma_total - ma
-                else
-                    needed = 0 - ma -- Haste alone caps delay; any MA is overcap
-                end
-                
+                else needed = 0 - ma end
                 return tonumber(string.format("%.2f", needed))
             end
 
-            -- No Samba Tiers
-            tbl['ma0']   = get_ma_needed(0.00, 0.00)
-            tbl['ma10']  = get_ma_needed(0.10, 0.00)
-            tbl['ma15']  = get_ma_needed(0.15, 0.00)
-            tbl['ma30']  = get_ma_needed(0.30, 0.00)
-            tbl['macap'] = get_ma_needed(0.4375, 0.00)
-
-            -- Sub Samba Tiers (5% JA Haste)
-            tbl['ma0s']   = get_ma_needed(0.00, 0.05)
-            tbl['ma10s']  = get_ma_needed(0.10, 0.05)
-            tbl['ma15s']  = get_ma_needed(0.15, 0.05)
-            tbl['ma30s']  = get_ma_needed(0.30, 0.05)
-            tbl['macaps'] = get_ma_needed(0.4375, 0.05)
-
-            -- Main Samba Tiers (10% JA Haste)
-            tbl['ma0m']   = get_ma_needed(0.00, 0.10)
-            tbl['ma10m']  = get_ma_needed(0.10, 0.10)
-            tbl['ma15m']  = get_ma_needed(0.15, 0.10)
-            tbl['ma30m']  = get_ma_needed(0.30, 0.10)
-            tbl['macapm'] = get_ma_needed(0.4375, 0.10)
+            tbl['ma0'] = get_ma_needed(0.00, 0.00); tbl['ma10'] = get_ma_needed(0.10, 0.00); tbl['ma15'] = get_ma_needed(0.15, 0.00); tbl['ma30'] = get_ma_needed(0.30, 0.00); tbl['macap'] = get_ma_needed(0.4375, 0.00)
+            tbl['ma0s'] = get_ma_needed(0.00, 0.05); tbl['ma10s'] = get_ma_needed(0.10, 0.05); tbl['ma15s'] = get_ma_needed(0.15, 0.05); tbl['ma30s'] = get_ma_needed(0.30, 0.05); tbl['macaps'] = get_ma_needed(0.4375, 0.05)
+            tbl['ma0m'] = get_ma_needed(0.00, 0.10); tbl['ma10m'] = get_ma_needed(0.10, 0.10); tbl['ma15m'] = get_ma_needed(0.15, 0.10); tbl['ma30m'] = get_ma_needed(0.30, 0.10); tbl['macapm'] = get_ma_needed(0.4375, 0.10)
         else
-            -- Single Wield / 2-Handed
+            original_base_delay = main_dly
             round_delay = main_dly
             calc_delay = main_dly
             base_hits = 1
         end
         
-        -- 1. Calculate Actual TP Per Hit
         local base_tp = 0
-        if calc_delay <= 180 then
-            base_tp = 61 + ((calc_delay - 180) * 15 / 180)
-        elseif calc_delay <= 540 then
-            base_tp = 61 + ((calc_delay - 180) * 40 / 360)
-        else
-            base_tp = 101 + ((calc_delay - 540) * 20 / 360)
-        end
+        if calc_delay <= 180 then base_tp = 61 + ((calc_delay - 180) * 15 / 180)
+        elseif calc_delay <= 540 then base_tp = 61 + ((calc_delay - 180) * 40 / 360)
+        else base_tp = 101 + ((calc_delay - 540) * 20 / 360) end
         
-        -- Floor the base TP, then apply STP and floor again
         base_tp = math.floor(base_tp)
         local tp_per_hit = math.floor(base_tp * (1 + (stp / 100)))
         tbl['actual tp per hit'] = tp_per_hit
         
-        -- 2. Calculate Time to WS (TTW)
         if tp_per_hit > 0 then
-            local gear_haste = 0.256 -- 25.6% Cap
-            local magic_haste = 0.4375 -- 43.75% Cap
-            local ja_haste = math.min(0.25, 0.10 + ((tbl['hasso'] or 0) / 100)) -- 10% Base + Hasso Gear
-            local total_haste = math.min(0.80, gear_haste + magic_haste + ja_haste) -- 80% Hard Cap
+            local gear_haste = 0.256 
+            local magic_haste = 0.4375 
+            local ja_haste = math.min(0.25, 0.10 + ((tbl['hasso'] or 0) / 100)) 
+            local total_haste = math.min(0.80, gear_haste + magic_haste + ja_haste) 
             
-            -- Apply haste to the round delay to get real seconds
             local hasted_delay = round_delay * (1 - total_haste)
-            local round_time_sec = hasted_delay / 60
             
-            local expected_tp_per_round = tp_per_hit * (base_hits + (ear_z_ladder or 0))
+            -- Universal 80% Delay Reduction Cap Enforced
+            local min_delay = original_base_delay * 0.20
+            if hasted_delay < min_delay then
+                hasted_delay = min_delay
+            end
+
+            local round_time_sec = hasted_delay / 60
+            local expected_tp_per_round = tp_per_hit * base_hits * (1 + (ear_z_ladder or 0))
             
             if expected_tp_per_round > 0 then
                 tbl['ttw1k'] = tonumber(string.format("%.2f", (1000 / expected_tp_per_round) * round_time_sec))
@@ -572,43 +492,33 @@ function show_results(name,mjob,sjob)
             end
         end
     end
--- Subtle Blow Calculations
+
     local sb_base = tbl['subtle blow'] or 0
     local sb_ii = tbl['subtle blow ii'] or 0
-    
-    -- Cap the individual tiers at 50 each, then combine them for the new total category
     tbl['total subtle blow'] = math.min(sb_base, 50) + math.min(sb_ii, 50)
 
    local stats = settings[mjob]
     local head = '<'..mjob..'/'..(sjob or '')..'>'
     
-    -- Override stats and header if a custom role mode is active (//chp dd)
     if current_mode ~= 'default' and settings.roles and settings.roles[current_mode] then
         stats = settings.roles[current_mode]
         head = '<'..current_mode:upper()..' Mode>'
     else
-        -- If in default mode, scan the job string for tags like "role:dd" and expand them
         if settings.roles then
             stats = string.gsub(stats, 'role:(%w+)', function(role_match)
                 local r = string.lower(role_match)
-                if settings.roles[r] then
-                    return settings.roles[r]
-                else
-                    return 'role:' .. role_match -- Keep it as-is if the role doesn't exist
-                end
+                if settings.roles[r] then return settings.roles[r]
+                else return 'role:' .. role_match end
             end)
         end
     end
     
 	coroutine.sleep(0.1)
     windower.add_to_chat(160,string.color(name,1,160)..': '..string.color(head,160,160))
-    local printed_stats = {} -- Table to track what we have already output
+    local printed_stats = {} 
 
     for index,key in ipairs(windower.regex.split(stats,'[|]')) do
-        -- Make it lowercase AND trim any hidden spaces/newlines
         key = string.lower(key):trim()
-        
-        -- Only proceed if we haven't printed this stat yet
         if not printed_stats[key] then
             printed_stats[key] = true 
             
@@ -617,94 +527,92 @@ function show_results(name,mjob,sjob)
 				
             local color = {value and 1 or 160,value and 166 or 160, 106, 205, 61}
             local stat_cap = caps[key]
-            
-       -- Look up the abbreviation
             local display_key = abbreviations[key] or key
             
-            -- >>> BEGIN CUSTOM COLOR LOGIC <<<
             local key_col = color[1]
             local val_col = color[2]
             local display_value = value and tostring(value) or "0"
 
-            if key == 'quadruple attack' then
-                val_col = 204
-            elseif key == 'triple attack' then
-                val_col = 206
-            elseif key == 'double attack' then
-                val_col = 205
-            elseif key == 'store tp' then
-                val_col = 208
-            elseif key == 'zanshin' then
-                val_col = 167
+            if key == 'quadruple attack' then val_col = 204
+            elseif key == 'triple attack' then val_col = 206
+            elseif key == 'double attack' then val_col = 205
+            elseif key == 'store tp' then val_col = 208
+            elseif key == 'zanshin' then val_col = 167
             elseif key == 'multi attack' then
                 local qa = tbl['quadruple attack'] or 0
                 local ta = tbl['triple attack'] or 0
                 local da = tbl['double attack'] or 0
                 local total_ma = qa + ta + da
                 
-                display_value = total_ma .. ' (' .. 
-                    string.color(tostring(qa), 204, val_col) .. ', ' .. 
-                    string.color(tostring(ta), 206, val_col) .. ', ' .. 
-                    string.color(tostring(da), 205, val_col) .. ')'
+                display_value = total_ma .. ' (' .. string.color(tostring(qa), 204, val_col) .. ', ' .. string.color(tostring(ta), 206, val_col) .. ', ' .. string.color(tostring(da), 205, val_col) .. ')'
             elseif key == 'tpgain' then
                 local qa = tbl['quadruple attack'] or 0
                 local ta = tbl['triple attack'] or 0
                 local da = tbl['double attack'] or 0
                 local stp = tbl['store tp'] or 0
+                local hr = tbl['hit_rate'] or 0.95
                 
-                local qa_gain = qa * 3
-                local ta_gain = ta * 2
-                local da_gain = da * 1
+                local qa_gain = qa * 3 * hr
+                local ta_gain = ta * 2 * hr
+                local da_gain = da * 1 * hr
                 
                 display_value = '+' .. display_value .. '% (' .. 
-                    string.color('+' .. tostring(qa_gain) .. '%', 204, val_col) .. ',' .. 
-                    string.color('+' .. tostring(ta_gain) .. '%', 206, val_col) .. ',' .. 
-                    string.color('+' .. tostring(da_gain) .. '%', 205, val_col) .. ',' ..
+                    string.color('+' .. string.format("%g", qa_gain) .. '%', 204, val_col) .. ',' .. 
+                    string.color('+' .. string.format("%g", ta_gain) .. '%', 206, val_col) .. ',' .. 
+                    string.color('+' .. string.format("%g", da_gain) .. '%', 205, val_col) .. ',' ..
                     string.color('+' .. tostring(stp) .. '%', 208, val_col) .. ')'
             elseif key == 'tpgainz' then
                 local qa = tbl['quadruple attack'] or 0
                 local ta = tbl['triple attack'] or 0
                 local da = tbl['double attack'] or 0
-                local zan = tbl['zanshin'] or 0
-                local zan_oat = tbl['zanshin: oat'] or 0
                 local stp = tbl['store tp'] or 0
+                local hr = tbl['hit_rate'] or 0.95
+                local m_rate = 1.0 - hr
+                local w_type = tbl['weap_type'] or '2h'
                 
-                local qa_gain = qa * 3
-                local ta_gain = ta * 2
-                local da_gain = da * 1
+                local qa_gain = qa * 3 * hr
+                local ta_gain = ta * 2 * hr
+                local da_gain = da * 1 * hr
                 
+                local zan = (w_type == 'dw' or w_type == 'h2h') and 0 or (tbl['zanshin'] or 0)
+                local zan_oat = (w_type == 'dw' or w_type == 'h2h') and 0 or (tbl['zanshin: oat'] or 0)
                 local zan_rate = math.min(zan, 100)
-                local hasso_rate = math.min(zan * 0.25, 35)
+                local hasso_rate = (w_type == '1h' or w_type == 'dw' or w_type == 'h2h') and 0 or math.min(zan * 0.25, 35)
+
                 local oat_mult = 1 + (zan_oat / 100)
-                local zan_eff_pct = ((hasso_rate * 0.95) + (zan_rate * 0.05)) * oat_mult
+                local zan_eff_pct = ((hasso_rate * hr) + (zan_rate * m_rate)) * oat_mult
                 local ZAN_TP_MULT = 2.22
-                local zan_gain = zan_eff_pct * ZAN_TP_MULT
+                local zan_gain = (zan_eff_pct / 100) * ZAN_TP_MULT * 100
                 
                 display_value = '+' .. display_value .. '% (' .. 
-                    string.color('+' .. tostring(qa_gain) .. '%', 204, val_col) .. ',' .. 
-                    string.color('+' .. tostring(ta_gain) .. '%', 206, val_col) .. ',' .. 
-                    string.color('+' .. tostring(da_gain) .. '%', 205, val_col) .. ',' ..
+                    string.color('+' .. string.format("%g", qa_gain) .. '%', 204, val_col) .. ',' .. 
+                    string.color('+' .. string.format("%g", ta_gain) .. '%', 206, val_col) .. ',' .. 
+                    string.color('+' .. string.format("%g", da_gain) .. '%', 205, val_col) .. ',' ..
                     string.color('+' .. string.format("%.2f", zan_gain) .. '%', 167, val_col) .. ',' ..
                     string.color('+' .. tostring(stp) .. '%', 208, val_col) .. ')'
             elseif key == 'tpgainz+' then
                 local qa = tbl['quadruple attack'] or 0
                 local ta = tbl['triple attack'] or 0
                 local da = tbl['double attack'] or 0
-                local zan = tbl['zanshin'] or 0
-                local zan_oat = tbl['zanshin: oat'] or 0
                 local stp = tbl['store tp'] or 0
+                local hr = tbl['hit_rate'] or 0.95
+                local m_rate = 1.0 - hr
+                local w_type = tbl['weap_type'] or '2h'
                 
-                local qa_gain = qa * 3
-                local ta_gain = ta * 2
-                local da_gain = da * 1
+                local qa_gain = qa * 3 * hr
+                local ta_gain = ta * 2 * hr
+                local da_gain = da * 1 * hr
                 local stp_mult = stp / 100
                 
+                local zan = (w_type == 'dw' or w_type == 'h2h') and 0 or (tbl['zanshin'] or 0)
+                local zan_oat = (w_type == 'dw' or w_type == 'h2h') and 0 or (tbl['zanshin: oat'] or 0)
                 local zan_rate = math.min(zan, 100)
-                local hasso_rate = math.min(zan * 0.25, 35)
+                local hasso_rate = (w_type == '1h' or w_type == 'dw' or w_type == 'h2h') and 0 or math.min(zan * 0.25, 35)
+
                 local oat_mult = 1 + (zan_oat / 100)
-                local zan_eff_pct = ((hasso_rate * 0.95) + (zan_rate * 0.05)) * oat_mult
+                local zan_eff_pct = ((hasso_rate * hr) + (zan_rate * m_rate)) * oat_mult
                 local ZAN_TP_MULT = 2.22
-                local zan_gain = zan_eff_pct * ZAN_TP_MULT
+                local zan_gain = (zan_eff_pct / 100) * ZAN_TP_MULT * 100
                 
                 local qa_bonus = string.format("%g", qa_gain * stp_mult)
                 local ta_bonus = string.format("%g", ta_gain * stp_mult)
@@ -712,9 +620,9 @@ function show_results(name,mjob,sjob)
                 local zan_bonus = string.format("%.2f", zan_gain * stp_mult)
                 local total_bonus = string.format("%.2f", (qa_gain + ta_gain + da_gain + zan_gain) * stp_mult)
                 
-                local qa_str = string.color('+' .. qa_gain .. '%', 204, val_col) .. string.color('[+' .. qa_bonus .. '%]', 208, val_col)
-                local ta_str = string.color('+' .. ta_gain .. '%', 206, val_col) .. string.color('[+' .. ta_bonus .. '%]', 208, val_col)
-                local da_str = string.color('+' .. da_gain .. '%', 205, val_col) .. string.color('[+' .. da_bonus .. '%]', 208, val_col)
+                local qa_str = string.color('+' .. string.format("%g", qa_gain) .. '%', 204, val_col) .. string.color('[+' .. qa_bonus .. '%]', 208, val_col)
+                local ta_str = string.color('+' .. string.format("%g", ta_gain) .. '%', 206, val_col) .. string.color('[+' .. ta_bonus .. '%]', 208, val_col)
+                local da_str = string.color('+' .. string.format("%g", da_gain) .. '%', 205, val_col) .. string.color('[+' .. da_bonus .. '%]', 208, val_col)
                 local zan_str = string.color('+' .. string.format("%.2f", zan_gain) .. '%', 167, val_col) .. string.color('[+' .. zan_bonus .. '%]', 208, val_col)
                 local stp_str = string.color('+' .. stp .. '%', 208, val_col) .. string.color('[+' .. total_bonus .. '%]', 208, val_col)
                 
@@ -723,71 +631,56 @@ function show_results(name,mjob,sjob)
                 local qa = tbl['quadruple attack'] or 0
                 local ta = tbl['triple attack'] or 0
                 local da = tbl['double attack'] or 0
-                local zan = tbl['zanshin'] or 0
-                local zan_oat = tbl['zanshin: oat'] or 0
                 local stp = tbl['store tp'] or 0
+                local hr = tbl['hit_rate'] or 0.95
+                local m_rate = 1.0 - hr
+                local w_type = tbl['weap_type'] or '2h'
                 
                 local qa_prob = math.min(qa / 100, 1.0)
                 local ta_prob = math.min(ta / 100, 1.0)
                 local da_prob = math.min(da / 100, 1.0)
                 local stp_mult = stp / 100
                 
-                -- Raw potential gains
-                local qa_raw = qa * 3
-                local ta_raw = ta * 2
-                local da_raw = da * 1
+                local qa_raw = qa * 3 * hr
+                local ta_raw = ta * 2 * hr
+                local da_raw = da * 1 * hr
                 
-                local zan_prob = math.min(zan, 100) / 100
-                local hasso_prob = math.min(zan * 0.25, 35) / 100
+                local zan = (w_type == 'dw' or w_type == 'h2h') and 0 or (tbl['zanshin'] or 0)
+                local zan_oat = (w_type == 'dw' or w_type == 'h2h') and 0 or (tbl['zanshin: oat'] or 0)
+                local zan_rate = math.min(zan, 100) / 100
+                local hasso_rate = (w_type == '1h' or w_type == 'dw' or w_type == 'h2h') and 0 or (math.min(zan * 0.25, 35) / 100)
+                
                 local oat_mult = 1 + (zan_oat / 100)
-                local base_zan_procs = (hasso_prob * 0.95) + (zan_prob * 0.05)
+                local base_zan_procs = (hasso_rate * hr) + (zan_rate * m_rate)
                 local zan_eff = base_zan_procs * oat_mult
                 
                 local ZAN_TP_MULT = 2.22
                 local zan_raw = zan_eff * 100 * ZAN_TP_MULT
                 
-                -- Actual gains (post-cannibalization)
                 local qa_act = qa_raw
                 local ta_act = (1 - qa_prob) * ta_raw
                 local da_act = (1 - qa_prob) * (1 - ta_prob) * da_raw
                 local p_no_ma = (1 - qa_prob) * (1 - ta_prob) * (1 - da_prob)
                 local zan_act = p_no_ma * zan_raw
                 
-                -- Detrimental losses
                 local qa_loss = qa_raw - qa_act
                 local ta_loss = ta_raw - ta_act
                 local da_loss = da_raw - da_act
                 local zan_loss = zan_raw - zan_act
                 
-                -- Store TP bonuses (calculated against actual gains)
                 local qa_bonus = qa_act * stp_mult
                 local ta_bonus = ta_act * stp_mult
                 local da_bonus = da_act * stp_mult
                 local zan_bonus = zan_act * stp_mult
                 local total_bonus = (qa_act + ta_act + da_act + zan_act) * stp_mult
                 
-                -- Formatting function to restrict decimals
                 local function fmt(v) return string.format("%.2f", v):gsub("%.00$", "") end
                 
-                -- String builders (Loss brackets only appear if loss > 0)
-                local qa_str = string.color('+' .. fmt(qa_raw) .. '%', 204, val_col) .. 
-                               (qa_loss > 0 and string.color('[-' .. fmt(qa_loss) .. '%]', 160, val_col) or '') .. 
-                               string.color('[+' .. fmt(qa_bonus) .. '%]', 208, val_col)
-                               
-                local ta_str = string.color('+' .. fmt(ta_raw) .. '%', 206, val_col) .. 
-                               (ta_loss > 0 and string.color('[-' .. fmt(ta_loss) .. '%]', 160, val_col) or '') .. 
-                               string.color('[+' .. fmt(ta_bonus) .. '%]', 208, val_col)
-                               
-                local da_str = string.color('+' .. fmt(da_raw) .. '%', 205, val_col) .. 
-                               (da_loss > 0 and string.color('[-' .. fmt(da_loss) .. '%]', 160, val_col) or '') .. 
-                               string.color('[+' .. fmt(da_bonus) .. '%]', 208, val_col)
-                               
-                local zan_str = string.color('+' .. fmt(zan_raw) .. '%', 167, val_col) .. 
-                                (zan_loss > 0 and string.color('[-' .. fmt(zan_loss) .. '%]', 160, val_col) or '') .. 
-                                string.color('[+' .. fmt(zan_bonus) .. '%]', 208, val_col)
-                                
-                local stp_str = string.color('+' .. stp .. '%', 208, val_col) .. 
-                                string.color('[+' .. fmt(total_bonus) .. '%]', 208, val_col)
+                local qa_str = string.color('+' .. fmt(qa_raw) .. '%', 204, val_col) .. (qa_loss > 0 and string.color('[-' .. fmt(qa_loss) .. '%]', 160, val_col) or '') .. string.color('[+' .. fmt(qa_bonus) .. '%]', 208, val_col)
+                local ta_str = string.color('+' .. fmt(ta_raw) .. '%', 206, val_col) .. (ta_loss > 0 and string.color('[-' .. fmt(ta_loss) .. '%]', 160, val_col) or '') .. string.color('[+' .. fmt(ta_bonus) .. '%]', 208, val_col)
+                local da_str = string.color('+' .. fmt(da_raw) .. '%', 205, val_col) .. (da_loss > 0 and string.color('[-' .. fmt(da_loss) .. '%]', 160, val_col) or '') .. string.color('[+' .. fmt(da_bonus) .. '%]', 208, val_col)
+                local zan_str = string.color('+' .. fmt(zan_raw) .. '%', 167, val_col) .. (zan_loss > 0 and string.color('[-' .. fmt(zan_loss) .. '%]', 160, val_col) or '') .. string.color('[+' .. fmt(zan_bonus) .. '%]', 208, val_col)
+                local stp_str = string.color('+' .. stp .. '%', 208, val_col) .. string.color('[+' .. fmt(total_bonus) .. '%]', 208, val_col)
                 
                 display_value = '+' .. display_value .. '%\n (' .. qa_str ..','..ta_str..','..da_str ..',\n     '.. zan_str ..',' .. stp_str ..')'
             
@@ -799,51 +692,36 @@ function show_results(name,mjob,sjob)
                 local ta = tbl['triple attack'] or 0
                 local da = tbl['double attack'] or 0
                 local stp = tbl['store tp'] or 0
+                local hr = tbl['hit_rate'] or 0.95
                 
                 local qa_prob = math.min(qa / 100, 1.0)
                 local ta_prob = math.min(ta / 100, 1.0)
                 local da_prob = math.min(da / 100, 1.0)
                 local stp_mult = stp / 100
                 
-                -- Raw potential gains
-                local qa_raw = qa * 3
-                local ta_raw = ta * 2
-                local da_raw = da * 1
+                local qa_raw = qa * 3 * hr
+                local ta_raw = ta * 2 * hr
+                local da_raw = da * 1 * hr
                 
-                -- Actual gains (post-cannibalization)
                 local qa_act = qa_raw
                 local ta_act = (1 - qa_prob) * ta_raw
                 local da_act = (1 - qa_prob) * (1 - ta_prob) * da_raw
                 
-                -- Detrimental losses
                 local qa_loss = qa_raw - qa_act
                 local ta_loss = ta_raw - ta_act
                 local da_loss = da_raw - da_act
                 
-                -- Store TP bonuses (calculated against actual gains)
                 local qa_bonus = qa_act * stp_mult
                 local ta_bonus = ta_act * stp_mult
                 local da_bonus = da_act * stp_mult
                 local total_bonus = (qa_act + ta_act + da_act) * stp_mult
                 
-                -- Formatting function to restrict decimals
                 local function fmt(v) return string.format("%.2f", v):gsub("%.00$", "") end
                 
-                -- String builders (Loss brackets only appear if loss > 0)
-                local qa_str = string.color('+' .. fmt(qa_raw) .. '%', 204, val_col) .. 
-                               (qa_loss > 0 and string.color('[-' .. fmt(qa_loss) .. '%]', 160, val_col) or '') .. 
-                               string.color('[+' .. fmt(qa_bonus) .. '%]', 208, val_col)
-                               
-                local ta_str = string.color('+' .. fmt(ta_raw) .. '%', 206, val_col) .. 
-                               (ta_loss > 0 and string.color('[-' .. fmt(ta_loss) .. '%]', 160, val_col) or '') .. 
-                               string.color('[+' .. fmt(ta_bonus) .. '%]', 208, val_col)
-                               
-                local da_str = string.color('+' .. fmt(da_raw) .. '%', 205, val_col) .. 
-                               (da_loss > 0 and string.color('[-' .. fmt(da_loss) .. '%]', 160, val_col) or '') .. 
-                               string.color('[+' .. fmt(da_bonus) .. '%]', 208, val_col)
-                                
-                local stp_str = string.color('+' .. stp .. '%', 208, val_col) .. 
-                                string.color('[+' .. fmt(total_bonus) .. '%]', 208, val_col)
+                local qa_str = string.color('+' .. fmt(qa_raw) .. '%', 204, val_col) .. (qa_loss > 0 and string.color('[-' .. fmt(qa_loss) .. '%]', 160, val_col) or '') .. string.color('[+' .. fmt(qa_bonus) .. '%]', 208, val_col)
+                local ta_str = string.color('+' .. fmt(ta_raw) .. '%', 206, val_col) .. (ta_loss > 0 and string.color('[-' .. fmt(ta_loss) .. '%]', 160, val_col) or '') .. string.color('[+' .. fmt(ta_bonus) .. '%]', 208, val_col)
+                local da_str = string.color('+' .. fmt(da_raw) .. '%', 205, val_col) .. (da_loss > 0 and string.color('[-' .. fmt(da_loss) .. '%]', 160, val_col) or '') .. string.color('[+' .. fmt(da_bonus) .. '%]', 208, val_col)
+                local stp_str = string.color('+' .. stp .. '%', 208, val_col) .. string.color('[+' .. fmt(total_bonus) .. '%]', 208, val_col)
                 
                 display_value = '+' .. display_value .. '%\n     (' .. qa_str .. ', ' .. ta_str .. ', ' .. da_str .. ', ' .. stp_str .. ')'
 				end
@@ -852,60 +730,36 @@ function show_results(name,mjob,sjob)
 
             if stat_cap == nil or value == nil then
                 output_string = output_string..' '..string.color(display_value, val_col, 160)
-            
-            
             elseif type(stat_cap) == 'table' then
-                -- Determine which cap to use based on the value's sign
                 local active_cap = 0
-                if value <= 0 then
-                    active_cap = stat_cap.min
-                else
-                    active_cap = stat_cap.max
-                end
+                if value <= 0 then active_cap = stat_cap.min else active_cap = stat_cap.max end
                 
-                -- Apply standard color logic against the active cap
-                if value == active_cap then
-                    output_string = output_string..' '..string.color(tostring(value),color[3],160)..'/'..string.color(tostring(active_cap),155,160)
-                elseif math.abs(value) > math.abs(active_cap) then
-                    output_string = output_string..' '..string.color(tostring(value),color[4],160)..'/'..string.color(tostring(active_cap),155,160)
-                else
-                    output_string = output_string..' '..string.color(tostring(value),color[5],160)..'/'..string.color(tostring(active_cap),155,160)
-                end
-            
-            -- Original single-cap logic
-            elseif value == stat_cap then
-                output_string = output_string..' '..string.color(tostring(value),color[3],160)..'/'..string.color(tostring(stat_cap),155,160)
-            elseif math.abs(value) > math.abs(stat_cap) then
-                output_string = output_string..' '..string.color(tostring(value),color[4],160)..'/'..string.color(tostring(stat_cap),155,160)
-            else
-                output_string = output_string..' '..string.color(tostring(value),color[5],160)..'/'..string.color(tostring(stat_cap),155,160)
-            end
+                if value == active_cap then output_string = output_string..' '..string.color(tostring(value),color[3],160)..'/'..string.color(tostring(active_cap),155,160)
+                elseif math.abs(value) > math.abs(active_cap) then output_string = output_string..' '..string.color(tostring(value),color[4],160)..'/'..string.color(tostring(active_cap),155,160)
+                else output_string = output_string..' '..string.color(tostring(value),color[5],160)..'/'..string.color(tostring(active_cap),155,160) end
+            elseif value == stat_cap then output_string = output_string..' '..string.color(tostring(value),color[3],160)..'/'..string.color(tostring(stat_cap),155,160)
+            elseif math.abs(value) > math.abs(stat_cap) then output_string = output_string..' '..string.color(tostring(value),color[4],160)..'/'..string.color(tostring(stat_cap),155,160)
+            else output_string = output_string..' '..string.color(tostring(value),color[5],160)..'/'..string.color(tostring(stat_cap),155,160) end
 			
-            
-            -- BEGIN ZANSHIN POST-CAP APPEND 
             if key == 'zanshin' then
                 local zan_oat = tbl['zanshin: oat'] or 0
+                local w_type = tbl['weap_type'] or '2h'
                 
-                -- Cap the base values so the math doesn't inflate past 100 Zanshin
                 local safe_value = value or 0
 				local raw_zan_miss = math.min(safe_value, 100) * 0.05
-				local raw_zan_hasso = math.min(safe_value * 0.25, 35)
+				local raw_zan_hasso = (w_type == '1h' or w_type == 'dw' or w_type == 'h2h') and 0 or math.min(safe_value * 0.25, 35)
                 
                 output_string = output_string .. string.color(' (' .. string.format("%g", raw_zan_hasso) .. '%/35%)', val_col, 160)
                 
                 if zan_oat > 0 then
-                    -- Calculate actual expected OAT proc chance per round
                     local oat_actual = (raw_zan_miss * (zan_oat / 100)) + (raw_zan_hasso * (zan_oat / 100))
-                    
-                    -- Display the actual chance, rounded to 2 decimal places
                     output_string = output_string .. string.color(' [OAT: ' .. string.format("%.2f", oat_actual) .. '%]', 208, 160)
                 end
             end
-            -- Begin DW Penalty Apped
+
 			if key:match('^dw') and tbl[key .. '_pen'] and tbl[key .. '_pen'] < 0 then
                 output_string = output_string .. string.color(' (' .. tbl[key .. '_pen'] .. ' TP/Hit)', 167, 160)
             end
-            
         
             windower.add_to_chat(160,output_string)
         end
@@ -915,7 +769,6 @@ function show_results(name,mjob,sjob)
 end
 
 integrate = {
-    --[[integrate same property.information needed for development. @from20020516]]
     ['quad atk'] = 'quadruple attack',
     ['quad attack'] = 'quadruple attack',
     ['triple atk'] = 'triple attack',
@@ -945,21 +798,15 @@ integrate = {
 	['magic def bonus'] = 'magic defense bonus',
 	['def'] = 'defense',
 	['spell interruption rate'] = 'spell interruption rate down',
-    
-    -- Fixes for Quick Cast / Quick Magic
     ['occ quickens spellcasting'] = "quick cast",
     ['occassionally quickens spellcasting'] = "quick cast",
     ['quick magic'] = "quick cast",
-    
-    -- Fix for Phalanx
     ['phalanx received'] = "phalanx",
 	['hasso: haste'] = 'hasso',
-    ['hasso:haste'] = 'hasso', -- Added without a space just in case a future item typos it
-    
+    ['hasso:haste'] = 'hasso',
     ['song duration']="song effect duration",
-	
-	['physical damage taken  ii'] = 'physical damage taken ii', -- Double space
-    ['physical damage taken ⅱ'] = 'physical damage taken ii', -- Full-width unicode roman numeral
+	['physical damage taken  ii'] = 'physical damage taken ii', 
+    ['physical damage taken ⅱ'] = 'physical damage taken ii', 
     ['magic damage taken  ii'] = 'magic damage taken ii',
     ['magic damage taken ⅱ'] = 'magic damage taken ii',
     ['zanshin: occasionally attacks twice'] = 'zanshin: oat',
@@ -1040,19 +887,15 @@ enhanced = {
 	[27149] = 'triple attack+4|accuracy+40|strength+10|dexterity+10', --Tatenashi Gote+1
 	[25924] = 'triple attack+3|accuracy+60|strength+10|dexterity+10',--Tatenashi Sune-ate+1
 	[28428] = 'double attack+5|strength+15',--Sailfi Belt+1
-	-- PDT2
     [20687] = 'physical damage taken ii-18', -- Burtgang (ILvl 119)
     [20753] = 'physical damage taken ii-25', -- Epeolatry (ILvl 119)
 	[21685] = 'physical damage taken ii-25', -- Epeolatry (ILvl 119) Afterglow
     [20761] = 'physical damage taken ii-5',  -- Aettir
-
-    -- MDT2
     [11927] = 'magic damage taken ii-50',    -- Aegis (Lv 99)
     [16200] = 'magic damage taken ii-50',    -- Aegis (Lv 99) Afterglow
     [26493] = 'magic damage taken ii-15',    -- Duban Stage 3
     [26494] = 'magic damage taken ii-20',    -- Duban Stage 4
     [26495] = 'magic damage taken ii-25',    -- Duban Stage 5
-	
 	[27471] = 'zanshin: oat+10', -- Ryuo Sune-Ate
     [27472] = 'zanshin: oat+11', -- Ryuo Sune-Ate +1
 	[20852] = 'accuracy+45|magic accuracy+45|triple attack+3|quadruple attack+3|double attack+1', -- Aizkora +1
@@ -1340,7 +1183,6 @@ abbreviations = {
     ['ma15m'] = 'MA (15% main samba)',
     ['ma30m'] = 'MA (30% main samba)',
     ['macapm']='MA (cap main samba)',
-    -- You can add as many as you want here!
 }
 caps={
     ['haste']=26,
