@@ -981,6 +981,7 @@ enhanced = {
     [25924] = 'accuracy+60|triple attack+3|store tp+4', -- Tatena. Sune. +1
     [28430] = 'magic accuracy+15|int+10|int+3', -- Acuity Belt +1
     [27561] = 'def+20|magic defense bonus+5|enmity+5', -- Apeile Ring +1
+	[27560] = 'enmity+5', -- Apeile Ring
     [28487] = 'resist sleep+15|resist charm+15|element: light+15', -- Arete del Luna +1
     [27620] = 'accuracy+25|magic accuracy+25|int+25|mnd+25|conserve mp+1', -- Aurist's Cape +1
     [27518] = 'evasion+15|counter+10|evasion+5', -- Bathy Choker +1
